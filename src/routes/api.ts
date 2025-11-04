@@ -6,7 +6,14 @@ import {
     cancelScheduledJob,
     getAllScheduledJobs,
 } from "../services/scheduler"
-import { Contact, SendRequest, ScheduleRequest } from "../types"
+import {
+    getAllContacts,
+    getContactById,
+    createContact,
+    updateContact,
+    deleteContact as deleteContactFromDb,
+} from "../services/database"
+import { Contact, SendRequest, ScheduleRequest, CreateContactRequest, UpdateContactRequest } from "../types"
 
 const router = Router()
 
@@ -69,23 +76,119 @@ router.get("/api/status", (req: Request, res: Response) => {
     })
 })
 
-// 📇 Contacts endpoint
-router.get("/api/contacts", (req: Request, res: Response) => {
-    const contacts: Contact[] = [
-        {
-            name: "Big J",
-            phone: "4915758278556",
-        },
-        {
-            name: "Big M",
-            phone: "4915206111635",
-        },
-    ].map(x => ({
-        ...x,
-        phoneDisplay: `+${x.phone.substring(0, 2)} ${x.phone.substring(2, 6)} ${x.phone.substring(6)}`,
-    }))
+// 📇 Contacts endpoints
 
-    res.json(contacts)
+// Get all contacts
+router.get("/api/contacts", async (req: Request, res: Response) => {
+    try {
+        const contacts = await getAllContacts()
+        // Add phoneDisplay formatting
+        const formatted = contacts.map(c => ({
+            ...c,
+            phoneDisplay: `+${c.phone.substring(0, 2)} ${c.phone.substring(2, 6)} ${c.phone.substring(6)}`,
+        }))
+        res.json(formatted)
+    } catch (err) {
+        console.error("Error fetching contacts:", err)
+        res.status(500).json({ error: String(err) })
+    }
+})
+
+// Get single contact
+router.get("/api/contacts/:id", async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id)
+        if (isNaN(id)) {
+            return res.status(400).json({ error: "Invalid contact ID" })
+        }
+        const contact = await getContactById(id)
+        if (!contact) {
+            return res.status(404).json({ error: "Contact not found" })
+        }
+        res.json({
+            ...contact,
+            phoneDisplay: `+${contact.phone.substring(0, 2)} ${contact.phone.substring(2, 6)} ${contact.phone.substring(6)}`,
+        })
+    } catch (err) {
+        console.error("Error fetching contact:", err)
+        res.status(500).json({ error: String(err) })
+    }
+})
+
+// Create new contact
+router.post("/api/contacts", async (req: Request<{}, {}, CreateContactRequest>, res: Response) => {
+    try {
+        const { name, phone } = req.body
+        if (!name || !phone) {
+            return res.status(400).json({ error: "Name and phone are required" })
+        }
+        // Validate phone format (simple check)
+        if (!/^\d+$/.test(phone)) {
+            return res.status(400).json({ error: "Phone must contain only digits" })
+        }
+        const contact = await createContact({ name, phone })
+        res.status(201).json({
+            ...contact,
+            phoneDisplay: `+${contact.phone.substring(0, 2)} ${contact.phone.substring(2, 6)} ${contact.phone.substring(6)}`,
+        })
+    } catch (err: any) {
+        console.error("Error creating contact:", err)
+        // Check for unique constraint violation
+        if (err.code === "23505") {
+            return res.status(409).json({ error: "Contact with this phone number already exists" })
+        }
+        res.status(500).json({ error: String(err) })
+    }
+})
+
+// Update contact
+router.put("/api/contacts/:id", async (req: Request<{ id: string }, {}, UpdateContactRequest>, res: Response) => {
+    try {
+        const id = parseInt(req.params.id)
+        if (isNaN(id)) {
+            return res.status(400).json({ error: "Invalid contact ID" })
+        }
+        const { name, phone } = req.body
+        if (!name && !phone) {
+            return res.status(400).json({ error: "At least one field (name or phone) must be provided" })
+        }
+        // Validate phone format if provided
+        if (phone && !/^\d+$/.test(phone)) {
+            return res.status(400).json({ error: "Phone must contain only digits" })
+        }
+        const contact = await updateContact(id, { name, phone })
+        if (!contact) {
+            return res.status(404).json({ error: "Contact not found" })
+        }
+        res.json({
+            ...contact,
+            phoneDisplay: `+${contact.phone.substring(0, 2)} ${contact.phone.substring(2, 6)} ${contact.phone.substring(6)}`,
+        })
+    } catch (err: any) {
+        console.error("Error updating contact:", err)
+        if (err.code === "23505") {
+            return res.status(409).json({ error: "Contact with this phone number already exists" })
+        }
+        res.status(500).json({ error: String(err) })
+    }
+})
+
+// Delete contact
+router.delete("/api/contacts/:id", async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id)
+        if (isNaN(id)) {
+            return res.status(400).json({ error: "Invalid contact ID" })
+        }
+        const success = await deleteContactFromDb(id)
+        if (!success) {
+            return res.status(404).json({ error: "Contact not found" })
+        }
+        res.json({ ok: true })
+    } catch (err) {
+        console.error("Error deleting contact:", err)
+        res.status(500).json({ error: String(err) })
+    }
 })
 
 export default router

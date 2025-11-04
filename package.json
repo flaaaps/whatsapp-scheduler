@@ -2,16 +2,22 @@
   "name": "wa-test",
   "version": "1.0.0",
   "description": "WhatsApp message scheduler with TypeScript",
-  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "clean": "rm -rf dist",
-    "prebuild": "npm run clean"
+    "prebuild": "npm run clean",
+    "docker:run": "docker compose up",
+    "docker:build:run": "docker compose up --build"
   },
-  "keywords": ["whatsapp", "scheduler", "baileys", "typescript"],
+  "keywords": [
+    "whatsapp",
+    "scheduler",
+    "baileys",
+    "typescript"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -19,12 +25,14 @@
     "express": "^5.1.0",
     "express-basic-auth": "^1.2.1",
     "node-cron": "^4.2.1",
+    "pg": "^8.16.3",
     "qrcode-terminal": "^0.12.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.5",
     "@types/node": "^24.10.0",
     "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.15.6",
     "@types/qrcode-terminal": "^0.12.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"

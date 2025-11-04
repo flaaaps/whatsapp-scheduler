@@ -21,9 +21,22 @@ export interface ScheduledOnceJob {
 export type ScheduledJob = ScheduledCronJob | ScheduledOnceJob
 
 export interface Contact {
+    id: number
     name: string
     phone: string
     phoneDisplay?: string
+    created_at?: Date
+    updated_at?: Date
+}
+
+export interface CreateContactRequest {
+    name: string
+    phone: string
+}
+
+export interface UpdateContactRequest {
+    name?: string
+    phone?: string
 }
 
 export interface ScheduleRequest {

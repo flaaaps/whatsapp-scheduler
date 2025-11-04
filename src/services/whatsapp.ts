@@ -7,7 +7,7 @@ import makeWASocket, {
     WASocket,
 } from "@whiskeysockets/baileys"
 import { Boom } from "@hapi/boom"
-import { AUTH_DIR } from "../utils/constants";
+import { AUTH_DIR, WHATSAPP_CONNECTION_NAME } from "../utils/constants";
 
 let sock: WASocket | null = null
 
@@ -20,8 +20,7 @@ export async function initializeWhatsApp(): Promise<void> {
     sock = makeWASocket({
         auth: state,
         version,
-        printQRInTerminal: false,
-        browser: Browsers.macOS("Desktop"),
+        browser: [WHATSAPP_CONNECTION_NAME, 'Chrome', '1.0'], // 👈 your custom device name
     })
 
     sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {

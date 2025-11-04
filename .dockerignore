@@ -1,0 +1,37 @@
+# Node modules (will be installed in container)
+node_modules
+npm-debug.log
+
+# Build output
+dist
+
+# Git
+.git
+.gitignore
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# WhatsApp auth (mounted as volume)
+auth
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Documentation
+*.md
+!README.md
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.old.*
+*-backup.*

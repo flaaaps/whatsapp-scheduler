@@ -122,11 +122,30 @@
 		th {
 			background: #f3f4f6;
 		}
+
+		.nav-link {
+			display: inline-block;
+			margin: 1rem 0;
+			padding: 0.5rem 1rem;
+			background: #3b82f6;
+			color: white;
+			text-decoration: none;
+			border-radius: 6px;
+			font-size: 0.9rem;
+		}
+
+		.nav-link:hover {
+			background: #2563eb;
+		}
 	</style>
 </head>
 
 <body>
 	<h1>📅 WhatsApp Message Scheduler</h1>
+
+	<div style="margin-bottom: 1rem;">
+		<a href="/contacts.html" class="nav-link">📇 Manage Contacts</a>
+	</div>
 
 	<div class="status">
 		<strong>Status:</strong> <span id="statusBadge" class="badge disconnected">checking...</span>
