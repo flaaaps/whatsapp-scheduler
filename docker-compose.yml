@@ -1,60 +1,64 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: whatsapp-scheduler-db
-    restart: unless-stopped
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER:-whatsapp}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-whatsapp123}
-      - POSTGRES_DB=${POSTGRES_DB:-whatsapp_scheduler}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - whatsapp-network
-    # Uncomment the ports below if you need to access the database from your host machine
-    # (e.g., using pgAdmin, DBeaver, or psql for debugging)
-    # ports:
-    #   - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-whatsapp} -d ${POSTGRES_DB:-whatsapp_scheduler}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+   postgres:
+      image: postgres:16-alpine
+      container_name: whatsapp-scheduler-db
+      restart: unless-stopped
+      environment:
+         - POSTGRES_USER=${POSTGRES_USER:-whatsapp}
+         - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-whatsapp123}
+         - POSTGRES_DB=${POSTGRES_DB:-whatsapp_scheduler}
+      volumes:
+         - postgres_data:/var/lib/postgresql/data
+         - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      networks:
+         - whatsapp-network
+      # Uncomment the ports below if you need to access the database from your host machine
+      # (e.g., using pgAdmin, DBeaver, or psql for debugging)
+      # ports:
+      #   - "5432:5432"
+      healthcheck:
+         test:
+            [
+               "CMD-SHELL",
+               "pg_isready -U ${POSTGRES_USER:-whatsapp} -d ${POSTGRES_DB:-whatsapp_scheduler}",
+            ]
+         interval: 5s
+         timeout: 5s
+         retries: 5
 
-  whatsapp-scheduler:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: whatsapp-scheduler
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      - PORT=3000
-      - ADMIN_USER=${ADMIN_USER:-admin}
-      - ADMIN_PASS=${ADMIN_PASS:-password}
-      - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=${POSTGRES_USER:-whatsapp}
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-whatsapp123}
-      - DB_NAME=${POSTGRES_DB:-whatsapp_scheduler}
-    volumes:
-      # Persist WhatsApp authentication
-      - ./auth:/app/auth
-    networks:
-      - whatsapp-network
-    depends_on:
-      postgres:
-        condition: service_healthy
-    # Keep container running for QR code scanning
-    stdin_open: true
-    tty: true
+   whatsapp-scheduler:
+      build:
+         context: .
+         dockerfile: Dockerfile
+      container_name: whatsapp-scheduler
+      restart: unless-stopped
+      ports:
+         - "3000:3000"
+      environment:
+         - PORT=3000
+         - ADMIN_USER=${ADMIN_USER:-admin}
+         - ADMIN_PASS=${ADMIN_PASS:-password}
+         - NODE_ENV=production
+         - DB_HOST=postgres
+         - DB_PORT=5432
+         - DB_USER=${POSTGRES_USER:-whatsapp}
+         - DB_PASSWORD=${POSTGRES_PASSWORD:-whatsapp123}
+         - DB_NAME=${POSTGRES_DB:-whatsapp_scheduler}
+      volumes:
+         # Persist WhatsApp authentication
+         - ./auth:/app/auth
+      networks:
+         - whatsapp-network
+      depends_on:
+         postgres:
+            condition: service_healthy
+      # Keep container running for QR code scanning
+      stdin_open: true
+      tty: true
 
 networks:
-  whatsapp-network:
-    driver: bridge
+   whatsapp-network:
+      driver: bridge
 
 volumes:
-  postgres_data:
+   postgres_data:

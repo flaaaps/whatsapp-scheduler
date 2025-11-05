@@ -1,23 +1,23 @@
 {
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "jsx": "react-jsx",
-    "moduleResolution": "bundler",
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "resolveJsonModule": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowSyntheticDefaultImports": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "types": ["@remix-run/node", "vite/client"],
-    "paths": {
-      "~/*": ["./app/*"]
-    }
-  },
-  "include": ["server.ts", "app/**/*.ts", "app/**/*.tsx", "vite.config.ts"],
-  "exclude": ["node_modules", "auth", "public", "build"]
+   "compilerOptions": {
+      "target": "ES2020",
+      "module": "ESNext",
+      "lib": ["ES2020", "DOM", "DOM.Iterable"],
+      "jsx": "react-jsx",
+      "moduleResolution": "bundler",
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "strict": true,
+      "resolveJsonModule": true,
+      "forceConsistentCasingInFileNames": true,
+      "allowSyntheticDefaultImports": true,
+      "isolatedModules": true,
+      "noEmit": true,
+      "types": ["@remix-run/node", "vite/client"],
+      "paths": {
+         "~/*": ["./app/*"]
+      }
+   },
+   "include": ["server.ts", "app/**/*.ts", "app/**/*.tsx", "vite.config.ts"],
+   "exclude": ["node_modules", "auth", "public", "build"]
 }

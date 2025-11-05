@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 WhatsApp message scheduler built with:
+
 - **Backend**: @whiskeysockets/baileys v7, Express 5, PostgreSQL, node-cron
 - **Frontend**: Remix 2 with Vite 6, React 19, Server-Side Rendering
 - **Infrastructure**: Docker, TypeScript, ES Modules, tsx (TypeScript execution)
@@ -24,6 +25,7 @@ npm run dev
 ```
 
 The application will:
+
 - Start on port 3000
 - Run TypeScript directly using `tsx` (no compilation needed)
 - Initialize WhatsApp connection (QR code on first run)
@@ -60,6 +62,7 @@ docker-compose down
 ### Environment Variables
 
 Create a `.env` file in the project root:
+
 ```
 ADMIN_USER=admin
 ADMIN_PASS=your-secure-password
@@ -109,18 +112,20 @@ whatsapp-scheduler/
 ## Development
 
 ### Build System
+
 - **Backend**: TypeScript files bundled with `tsup` (powered by esbuild)
-  - Uses Remix `.server.ts` convention for server-only modules
-  - **No `.js` extensions needed in imports** (tsup handles module resolution)
+   - Uses Remix `.server.ts` convention for server-only modules
+   - **No `.js` extensions needed in imports** (tsup handles module resolution)
 - **Frontend**: Remix + Vite → Server + Client bundles (`app/` → `build/`)
 - **Dev Mode**:
-  - Uses `tsx` to run `server.ts` directly with hot-reload
-  - Vite middleware integrated into Express for frontend HMR
+   - Uses `tsx` to run `server.ts` directly with hot-reload
+   - Vite middleware integrated into Express for frontend HMR
 - **Prod Mode**: Both Remix and backend are pre-built and optimized
 
 ### Architecture: Hybrid Remix + Express
 
 The application uses a **hybrid architecture**:
+
 1. **Remix handles all UI routes** (`/`, `/contacts`, etc.)
 2. **Express handles all API routes** (`/api/*`)
 3. **Vite is integrated into Express** via middleware in development
@@ -128,6 +133,7 @@ The application uses a **hybrid architecture**:
 5. **Services** are in `app/.server/` and shared between Remix and Express
 
 **Key Integration Points:**
+
 - `server.ts` - Creates Express app with Remix request handler
 - `app/.server/api.server.ts` - API routes mounted to Express
 - `app/.server/*.server.ts` - Backend services (WhatsApp, DB, Scheduler)
@@ -135,6 +141,7 @@ The application uses a **hybrid architecture**:
 - **Remix loaders/actions use services directly** (no API calls needed)
 
 ### Scripts
+
 - `npm run dev` - Development mode with hot-reload (runs `tsx server.ts`)
 - `npm run build` - Build both Remix and backend (`build:remix` + `build:server`)
 - `npm run build:remix` - Build Remix app only with Vite
@@ -149,6 +156,7 @@ The application uses a **hybrid architecture**:
 ## Authentication
 
 The app uses HTTP Basic Auth:
+
 - Credentials are stored in `.env` file
 - Default: `ADMIN_USER` and `ADMIN_PASS`
 - All web UI and API endpoints require authentication
@@ -160,6 +168,7 @@ The app uses HTTP Basic Auth:
 ### Backend Services
 
 #### 1. Entry Point (`server.ts`)
+
 - Initializes database connection
 - Initializes WhatsApp connection
 - Creates and starts Express server (with Remix integration)
@@ -170,7 +179,9 @@ The app uses HTTP Basic Auth:
 - Graceful shutdown handlers
 
 #### 2. Database Service (`app/.server/db.server.ts`)
+
 **Exports:**
+
 - `initializeDatabase()` - Initialize PostgreSQL connection pool
 - `getAllContacts()` - Get all contacts from database
 - `getContactById(id)` - Get single contact
@@ -181,44 +192,57 @@ The app uses HTTP Basic Auth:
 - `closeDatabase()` - Close connection pool
 
 **Features:**
+
 - PostgreSQL connection pooling
 - Full CRUD operations for contacts
 - Dynamic query building for updates
 - Error handling for constraint violations
 
 #### 3. WhatsApp Service (`app/.server/whatsapp.server.ts`)
+
 **Exports:**
+
 - `initializeWhatsApp()` - Initialize Baileys connection
 - `getWhatsAppSocket()` - Get current socket instance
 - `sendMessage(to, text)` - Send a message
 - `getConnectionStatus()` - Get connection state
 - `getCurrentUser()` - Get logged-in user info
+- `getCurrentQR()` - Get current QR code string (for web UI display)
+- `logoutWhatsApp()` - Logout and clear auth state
 
 **Features:**
+
 - Multi-file auth state (persisted in `auth/` directory)
 - Auto-reconnection on disconnect (unless logged out)
-- QR code generation for pairing
+- QR code generation and storage for web UI display
 - Connection state management
+- Logout functionality with auth state clearing
 
 #### 4. Scheduler Service (`app/.server/scheduler.server.ts`)
+
 **Exports:**
+
 - `scheduleCron(to, text, cron)` - Schedule recurring message
 - `scheduleOnce(to, text, timestamp)` - Schedule one-time message
 - `cancelScheduledJob(id)` - Cancel a scheduled job
 - `getAllScheduledJobs()` - Get all active jobs
 
 **Features:**
+
 - In-memory Map for job storage
 - Unique timestamp-based job IDs
 - Support for both cron and one-time schedules
 
 #### 5. API Routes (`app/.server/api.server.ts`)
+
 **Messaging Endpoints:**
+
 - `POST /api/schedule` - Schedule new message (cron or timestamp)
 - `DELETE /api/schedule/:id` - Cancel scheduled job
 - `GET /api/status` - Connection status + scheduled jobs
 
 **Contact Management Endpoints:**
+
 - `GET /api/contacts` - Get all contacts from database
 - `GET /api/contacts/:id` - Get single contact
 - `POST /api/contacts` - Create new contact
@@ -226,6 +250,7 @@ The app uses HTTP Basic Auth:
 - `DELETE /api/contacts/:id` - Delete contact
 
 **Features:**
+
 - Fully typed request/response handlers
 - Error handling and validation
 - Duplicate phone number detection
@@ -236,28 +261,31 @@ The app uses HTTP Basic Auth:
 #### Routes
 
 **Main Scheduler** (`app/routes/_index.tsx`):
+
 - Loader: Uses services from context to get status and contacts
 - Action: Handles schedule creation and job cancellation via services
 - UI Features:
-  - Contact dropdown selector
-  - Message textarea
-  - Mode selector (once/cron)
-  - Dynamic fields based on mode
-  - Scheduled jobs table
-  - Real-time status badge
+   - Contact dropdown selector
+   - Message textarea
+   - Mode selector (once/cron)
+   - Dynamic fields based on mode
+   - Scheduled jobs table
+   - Real-time status badge
 
 **Contacts Management** (`app/routes/contacts.tsx`):
+
 - Loader: Uses services from context to get all contacts
 - Action: Handles create/update/delete operations via services
 - UI Features:
-  - Add contact form
-  - Contacts table
-  - Edit modal with overlay
-  - Delete confirmation
-  - Success/error messages
-  - Optimistic UI updates via useFetcher
+   - Add contact form
+   - Contacts table
+   - Edit modal with overlay
+   - Delete confirmation
+   - Success/error messages
+   - Optimistic UI updates via useFetcher
 
 #### Data Flow
+
 1. User interacts with Remix UI
 2. Form submission → Remix action
 3. **Action uses services directly from context** (no API fetch needed)
@@ -268,20 +296,49 @@ The app uses HTTP Basic Auth:
 
 **Note**: Remix routes can access backend services directly via the `context.services` object passed through `getLoadContext()`. This eliminates the need for internal API calls.
 
+### WhatsApp Authentication & QR Code
+
+**QR Code Display:**
+
+- QR code is displayed directly in the web UI on the main page
+- Frontend polls for QR updates every 3 seconds when not connected
+- QR code auto-refreshes when Baileys generates a new one
+- Generated as a data URL on the backend using the `qrcode` library
+- No terminal scanning required - everything is in the browser
+
+**Authentication Flow:**
+
+1. On first run (or after logout), Baileys generates a QR code
+2. QR code is stored in-memory and sent to the web UI
+3. User scans QR code with WhatsApp mobile app
+4. Once connected, QR code disappears and logout button appears
+5. Auth credentials are persisted in `auth/` directory
+
+**Logout Functionality:**
+
+- Logout button available in web UI when connected
+- Calls `logoutWhatsApp()` which:
+   - Closes the WhatsApp socket
+   - Deletes the `auth/` directory contents
+   - Reinitializes connection to generate a new QR code
+
 ### WhatsApp Message Format
 
 All messages use Baileys JID format:
+
 - Phone numbers are formatted as `${phoneNumber}@s.whatsapp.net`
 - Example: `491701234567@s.whatsapp.net`
 
 ### Contacts System
 
 Contacts are stored in PostgreSQL and accessed via:
+
 - **Database**: `app/.server/db.server.ts` - CRUD operations
 - **API**: `app/.server/api.server.ts` - RESTful endpoints (optional)
 - **UI**: `app/routes/contacts.tsx` - Remix route with direct service access
 
 #### Database Schema
+
 ```sql
 CREATE TABLE contacts (
     id SERIAL PRIMARY KEY,
@@ -303,6 +360,7 @@ CREATE TABLE contacts (
 ## Dependencies
 
 **Runtime:**
+
 - `@whiskeysockets/baileys` - WhatsApp Web API client
 - `express` - Web server
 - `express-basic-auth` - HTTP Basic Auth middleware
@@ -315,17 +373,20 @@ CREATE TABLE contacts (
 - `cross-env` - Cross-platform environment variables
 
 **Development:**
+
 - `typescript` - TypeScript compiler
 - `tsx` - TypeScript execution with hot-reload (for dev mode)
 - `tsup` - TypeScript bundler powered by esbuild (for production)
 - `vite` - Build tool and dev server
 - `@remix-run/dev` - Remix Vite plugin
 - `vite-tsconfig-paths` - Path resolution for Vite
+- `qrcode` - QR code generation for WhatsApp authentication
 - `@types/*` - Type definitions
 
 ## Adding New Features
 
 ### Adding a new Remix route:
+
 1. Create route file in `app/routes/`
 2. Export `loader` function for data fetching (access services via `context.services`)
 3. Export `action` function for mutations (access services via `context.services`)
@@ -333,11 +394,13 @@ CREATE TABLE contacts (
 5. Add navigation link in other routes
 
 ### Adding a new API endpoint:
+
 1. Add route handler in `app/.server/api.server.ts`
 2. Add request/response types in `app/types.ts` if needed
 3. Import and use services from `app/.server/`
 
 ### Adding new scheduler functionality:
+
 1. Add function in `app/.server/scheduler.server.ts`
 2. Export the function
 3. Use in Remix actions or API handlers
@@ -347,15 +410,18 @@ CREATE TABLE contacts (
 The project includes Docker support for production deployment.
 
 ### Docker Files
+
 - **Dockerfile** - Multi-stage build using Node.js 20 Alpine
 - **docker-compose.yml** - Orchestration with PostgreSQL
 - **.dockerignore** - Excludes build artifacts and node_modules
 
 ### Build Process
+
 1. **Stage 1 (Builder)**: Install all deps → Build Remix + Backend with tsup
 2. **Stage 2 (Production)**: Install prod deps → Copy build artifacts → Run compiled server
 
 ### Key Features
+
 - **Persistent Auth**: `auth/` directory mounted as volume
 - **Database**: PostgreSQL service with persistent volume
 - **Environment Variables**: Configurable via docker-compose
@@ -364,6 +430,7 @@ The project includes Docker support for production deployment.
 - **Internal Networking**: App connects to DB without port exposure
 
 ### Volume Mounts
+
 - `./auth:/app/auth` - WhatsApp authentication persistence
 - `postgres_data:/var/lib/postgresql/data` - Database persistence
 
@@ -371,9 +438,14 @@ The project includes Docker support for production deployment.
 
 **Node Version Error**: Ensure you're using Node.js 20 or higher. Check with `node -v`.
 
-**QR Code Not Scanning**: The QR code appears in the terminal. Scan it with WhatsApp's "Linked Devices" feature.
+**WhatsApp Authentication**:
 
-**Connection Lost**: Application auto-reconnects unless explicitly logged out. If logged out, delete `auth/` folder and restart.
+- QR code displays in the web UI on the main page
+- Automatically refreshes every 3 seconds when not connected
+- Scan with WhatsApp mobile app: Settings → Linked Devices → Link a Device
+- Use the logout button in the web UI to disconnect
+
+**Connection Lost**: Application auto-reconnects unless explicitly logged out. You can logout via the web UI button or by deleting the `auth/` folder.
 
 **Scheduled Jobs Lost**: Jobs are in-memory only. Server restart clears all schedules.
 
@@ -388,6 +460,7 @@ The project includes Docker support for production deployment.
 ## Module System
 
 Uses ES modules with TypeScript:
+
 - `type: "module"` in package.json
 - **No `.js` extensions needed** in imports (tsup handles module resolution)
 - Module resolution: "bundler" (TypeScript config)
