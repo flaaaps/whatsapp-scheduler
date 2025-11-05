@@ -35,6 +35,12 @@ RUN npm ci --omit=dev --legacy-peer-deps
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/dist ./dist
 
+# Copy public directory for static assets
+COPY public ./public
+
+# Create auth directory for WhatsApp credentials (will be mounted as volume)
+RUN mkdir -p /app/auth
+
 # Expose port
 EXPOSE 3000
 
