@@ -1,18 +1,19 @@
 {
-   "permissions": {
-      "allow": [
-         "Bash(npm install:*)",
-         "Bash(test:*)",
-         "Bash(npm run build:*)",
-         "Bash(cat:*)",
-         "Bash(tree:*)",
-         "Bash(npm run dev:*)",
-         "Bash(docker compose:*)",
-         "Bash(npm run typecheck:*)",
-         "Bash(npm run build:server:*)",
-         "WebSearch"
-      ],
-      "deny": [],
-      "ask": []
-   }
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(test:*)",
+      "Bash(npm run build:*)",
+      "Bash(cat:*)",
+      "Bash(tree:*)",
+      "Bash(npm run dev:*)",
+      "Bash(docker compose:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run build:server:*)",
+      "WebSearch",
+      "WebFetch(domain:www.npmjs.com)"
+    ],
+    "deny": [],
+    "ask": []
+  }
 }

@@ -11,6 +11,17 @@ import {
 } from "@remix-run/react";
 import { useState, useEffect, useRef } from "react";
 import type { AppLoadContext } from "~/.server/context.server";
+import {
+   Calendar,
+   MessageSquare,
+   RefreshCw,
+   Contact,
+   LogOut,
+   Clock,
+   Repeat,
+   X,
+   Send,
+} from "lucide-react";
 
 interface Contact {
    id: number;
@@ -39,23 +50,18 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
    try {
       const { services } = context as AppLoadContext;
 
-      // Fetch contacts from database service
       const contacts = await services.db.getAllContacts();
 
-      // Add phoneDisplay formatting
       const formatted = contacts.map((c) => ({
          ...c,
          phoneDisplay: `+${c.phone.substring(0, 2)} ${c.phone.substring(2, 6)} ${c.phone.substring(6)}`,
       }));
 
-      // Get WhatsApp status and scheduled jobs from services
       const connectionStatus = services.whatsapp.getConnectionStatus();
       const qrString = services.whatsapp.getCurrentQR();
       let qrCode: string | null = null;
 
-      // Generate QR code data URL if QR string is available
       if (qrString) {
-         // Import QRCode dynamically to avoid bundling issues
          const QRCode = await import("qrcode");
          try {
             qrCode = await QRCode.toDataURL(qrString);
@@ -89,9 +95,20 @@ export async function action({ request, context }: ActionFunctionArgs) {
    const intent = formData.get("intent");
    const { services } = context as AppLoadContext;
 
-   // Handle schedule message
    if (intent === "schedule") {
       try {
+         // Check if WhatsApp is connected
+         const connectionStatus = services.whatsapp.getConnectionStatus();
+         if (connectionStatus !== "connected") {
+            return json(
+               {
+                  error: "WhatsApp is not connected. Please connect before scheduling messages.",
+                  success: false,
+               },
+               { status: 400 },
+            );
+         }
+
          const to = formData.get("to") as string;
          const text = formData.get("text") as string;
          const mode = formData.get("mode") as string;
@@ -109,7 +126,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
          let id: string;
 
          if (mode === "once") {
-            // Use the UTC timestamp sent from client (already converted from user's local time)
             const timestampUTC = formData.get("timestampUTC") as string;
             if (!timestampUTC) {
                return json(
@@ -216,21 +232,29 @@ export default function Index() {
    const revalidator = useRevalidator();
    const [mode, setMode] = useState<"once" | "cron">("once");
    const prevStatusRef = useRef(status.status);
+   const [formKey, setFormKey] = useState(0);
 
    const isSubmitting = fetcher.state === "submitting";
+   const isConnected = status.status === "connected";
+   const canSchedule = isConnected && !isSubmitting;
 
-   // Immediately revalidate when connection status changes
+   useEffect(() => {
+      if (
+         fetcher.data?.success &&
+         fetcher.data?.message === "Message scheduled successfully!"
+      ) {
+         setFormKey((prev) => prev + 1);
+         setMode("once");
+      }
+   }, [fetcher.data?.success, fetcher.data?.message]);
+
    useEffect(() => {
       if (prevStatusRef.current !== status.status) {
          prevStatusRef.current = status.status;
-         // Revalidate immediately to sync QR state
          revalidator.revalidate();
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [status.status]);
 
-   // Poll for status updates when not connected OR when QR code is still visible
-   // This ensures we keep polling until the UI is fully in sync
    useEffect(() => {
       const shouldPoll =
          status.status !== "connected" || status.qrCode !== null;
@@ -242,10 +266,8 @@ export default function Index() {
 
          return () => clearInterval(interval);
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-   }, [status.status, status.qrCode]); // Poll until connected AND QR is cleared
+   }, [status.status, status.qrCode]);
 
-   // Revalidate immediately after successful logout to show new QR code
    useEffect(() => {
       if (
          fetcher.data?.success &&
@@ -258,11 +280,15 @@ export default function Index() {
 
    return (
       <div>
-         <h1>📅 WhatsApp Message Scheduler</h1>
+         <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Calendar size={28} />
+            WhatsApp Message Scheduler
+         </h1>
 
          <div style={{ marginBottom: "1rem" }}>
             <Link to="/contacts" className="nav-link">
-               📇 Manage Contacts
+               <Contact size={18} style={{ display: "inline", marginRight: "0.5rem", verticalAlign: "middle" }} />
+               Manage Contacts
             </Link>
          </div>
 
@@ -278,7 +304,9 @@ export default function Index() {
                         type="submit"
                         className="btn-cancel"
                         disabled={fetcher.state === "submitting"}
+                        style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
                      >
+                        <LogOut size={16} />
                         {fetcher.state === "submitting"
                            ? "Logging out..."
                            : "Logout from WhatsApp"}
@@ -313,9 +341,32 @@ export default function Index() {
             </div>
          )}
 
+         <div className="card">
+            <h2 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+               <MessageSquare size={22} />
+               Schedule a Message
+            </h2>
+
+            {!isConnected && (
+               <div style={{
+                  padding: "0.75rem",
+                  background: "#fef3c7",
+                  color: "#92400e",
+                  borderRadius: "6px",
+                  marginBottom: "1rem",
+                  fontSize: "0.9rem",
+                  border: "1px solid #fbbf24"
+               }}>
+                  <strong>⚠️ WhatsApp Not Connected</strong>
+                  <div style={{ marginTop: "0.25rem" }}>
+                     Please connect to WhatsApp before scheduling messages. {status.qrCode ? "Scan the QR code above to connect." : "Reconnect to continue."}
+                  </div>
+               </div>
+            )}
+
          <fetcher.Form
+            key={formKey}
             method="post"
-            className="card"
             onSubmit={(e) => {
                // Convert datetime-local to UTC timestamp
                if (mode === "once") {
@@ -345,12 +396,11 @@ export default function Index() {
                }
             }}
          >
-            <h2>Schedule a Message</h2>
             <input type="hidden" name="intent" value="schedule" />
 
             <label>
                Contact
-               <select name="to" required>
+               <select name="to" required disabled={!isConnected}>
                   <option value="">Select a contact</option>
                   {contacts.map((contact) => (
                      <option key={contact.id} value={contact.phone}>
@@ -366,6 +416,7 @@ export default function Index() {
                   name="text"
                   required
                   placeholder="Type your message here"
+                  disabled={!isConnected}
                />
             </label>
 
@@ -375,6 +426,7 @@ export default function Index() {
                   name="mode"
                   value={mode}
                   onChange={(e) => setMode(e.target.value as "once" | "cron")}
+                  disabled={!isConnected}
                >
                   <option value="once">Send once at specific time</option>
                   <option value="cron">Repeat using CRON pattern</option>
@@ -384,17 +436,25 @@ export default function Index() {
             {mode === "once" ? (
                <label>
                   Date & Time
-                  <input type="datetime-local" name="timestamp" required />
+                  <input
+                     key="datetime"
+                     type="datetime-local"
+                     name="timestamp"
+                     required
+                     disabled={!isConnected}
+                  />
                </label>
             ) : (
                <label>
                   CRON Expression
                   <input
+                     key="cron"
                      type="text"
                      name="cron"
                      placeholder="0 9 * * *"
                      required
                      pattern="^(\*|([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])|\*\/([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])) (\*|([0-9]|1[0-9]|2[0-3])|\*\/([0-9]|1[0-9]|2[0-3])) (\*|([1-9]|1[0-9]|2[0-9]|3[0-1])|\*\/([1-9]|1[0-9]|2[0-9]|3[0-1])) (\*|([1-9]|1[0-2])|\*\/([1-9]|1[0-2])) (\*|([0-6])|\*\/([0-6]))$"
+                     disabled={!isConnected}
                   />
                   <small className="small">
                      Examples: "0 9 * * *" (daily at 9am), "0 */2 * * *" (every
@@ -403,14 +463,37 @@ export default function Index() {
                </label>
             )}
 
-            <button type="submit" disabled={isSubmitting}>
-               {isSubmitting ? "Scheduling..." : "Schedule Message"}
+            <button type="submit" disabled={!canSchedule} style={{ display: "flex", alignItems: "center", gap: "0.5rem", justifyContent: "center" }}>
+               <Send size={18} />
+               {isSubmitting ? "Scheduling..." : isConnected ? "Schedule Message" : "Connect WhatsApp to Schedule"}
             </button>
          </fetcher.Form>
+         </div>
 
          {status.scheduled.length > 0 && (
             <div className="card">
-               <h2>📋 Scheduled Messages</h2>
+               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+                  <h2 style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: 0 }}>
+                     <Clock size={22} />
+                     Scheduled Messages
+                  </h2>
+                  <button
+                     onClick={() => revalidator.revalidate()}
+                     style={{
+                        background: "#3b82f6",
+                        padding: "0.4rem 0.8rem",
+                        fontSize: "0.85rem",
+                        marginTop: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.4rem",
+                     }}
+                     disabled={revalidator.state === "loading"}
+                  >
+                     <RefreshCw size={16} className={revalidator.state === "loading" ? "spinning" : ""} />
+                     {revalidator.state === "loading" ? "Refreshing..." : "Refresh"}
+                  </button>
+               </div>
                <table>
                   <thead>
                      <tr>
@@ -426,7 +509,12 @@ export default function Index() {
                         <tr key={job.id}>
                            <td>{job.to}</td>
                            <td>{job.text.substring(0, 30)}...</td>
-                           <td>{job.type}</td>
+                           <td>
+                              <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                                 {job.type === "once" ? <Clock size={14} /> : <Repeat size={14} />}
+                                 {job.type}
+                              </span>
+                           </td>
                            <td>{job.type === "once" ? job.when : job.cron}</td>
                            <td>
                               <fetcher.Form
@@ -443,7 +531,8 @@ export default function Index() {
                                     name="jobId"
                                     value={job.id}
                                  />
-                                 <button type="submit" className="btn-cancel">
+                                 <button type="submit" className="btn-cancel" style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                                    <X size={14} />
                                     Cancel
                                  </button>
                               </fetcher.Form>

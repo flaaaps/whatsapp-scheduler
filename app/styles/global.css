@@ -51,6 +51,14 @@ select {
    font-size: 1rem;
 }
 
+input:disabled,
+textarea:disabled,
+select:disabled {
+   background: #f3f4f6;
+   color: #6b7280;
+   cursor: not-allowed;
+}
+
 textarea {
    resize: vertical;
    min-height: 100px;
@@ -187,4 +195,18 @@ th {
    margin-top: 1rem;
    line-height: 1.6;
    color: #6b7280;
+}
+
+/* Spinning animation for refresh icon */
+@keyframes spin {
+   from {
+      transform: rotate(0deg);
+   }
+   to {
+      transform: rotate(360deg);
+   }
+}
+
+.spinning {
+   animation: spin 1s linear infinite;
 }

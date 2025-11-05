@@ -4,8 +4,9 @@ import {
    type ActionFunctionArgs,
 } from "@remix-run/node";
 import { useLoaderData, useFetcher, Link } from "@remix-run/react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { AppLoadContext } from "~/.server/context.server";
+import { Contact, UserPlus, Users, Edit2, Trash2, Save, X, ArrowLeft } from "lucide-react";
 
 interface Contact {
    id: number;
@@ -181,43 +182,80 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
 export default function Contacts() {
    const { contacts } = useLoaderData<typeof loader>();
-   const fetcher = useFetcher<{
+   const addFetcher = useFetcher<{
+      success: boolean;
+      error: string;
+      message: string;
+   }>();
+   const editFetcher = useFetcher<{
+      success: boolean;
+      error: string;
+      message: string;
+   }>();
+   const deleteFetcher = useFetcher<{
       success: boolean;
       error: string;
       message: string;
    }>();
    const [editingContact, setEditingContact] = useState<Contact | null>(null);
-
-   const isSubmitting = fetcher.state === "submitting";
+   const [addFormKey, setAddFormKey] = useState(0);
+   const prevEditStateRef = useRef(editFetcher.state);
 
    // Close edit modal when successfully submitted
-   if (fetcher.data?.success && editingContact) {
-      setTimeout(() => setEditingContact(null), 100);
-   }
+   // Fetcher state transitions: idle → submitting → loading → idle
+   // So we need to check for transition from loading to idle with success
+   useEffect(() => {
+      if (
+         prevEditStateRef.current === "loading" &&
+         editFetcher.state === "idle" &&
+         editFetcher.data?.success
+      ) {
+         setEditingContact(null);
+      }
+      prevEditStateRef.current = editFetcher.state;
+   }, [editFetcher.state, editFetcher.data?.success]);
+
+   // Reset add form after successful submission
+   useEffect(() => {
+      if (addFetcher.state === "idle" && addFetcher.data?.success) {
+         setAddFormKey((prev) => prev + 1);
+      }
+   }, [addFetcher.state, addFetcher.data?.success]);
 
    return (
       <div>
-         <h1>📇 Manage Contacts</h1>
+         <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Contact size={28} />
+            Manage Contacts
+         </h1>
          <p>Add, edit, and delete your WhatsApp contacts</p>
 
          <div style={{ marginBottom: "1rem" }}>
             <Link to="/" className="nav-link">
-               ← Back to Scheduler
+               <ArrowLeft size={18} style={{ display: "inline", marginRight: "0.5rem", verticalAlign: "middle" }} />
+               Back to Scheduler
             </Link>
          </div>
 
-         {fetcher.data?.error && (
-            <div className="error-message">{fetcher.data.error}</div>
+         {(addFetcher.data?.error || editFetcher.data?.error || deleteFetcher.data?.error) && (
+            <div className="error-message">
+               {addFetcher.data?.error || editFetcher.data?.error || deleteFetcher.data?.error}
+            </div>
          )}
 
-         {fetcher.data?.success && (
-            <div className="success-message">{fetcher.data.message}</div>
+         {(addFetcher.data?.success || editFetcher.data?.success || deleteFetcher.data?.success) && (
+            <div className="success-message">
+               {addFetcher.data?.message || editFetcher.data?.message || deleteFetcher.data?.message}
+            </div>
          )}
 
          {/* Add Contact Form */}
          <div className="card">
-            <h2>➕ Add New Contact</h2>
-            <fetcher.Form method="post">
+            <h2 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+               <UserPlus size={22} />
+               Add New Contact
+            </h2>
+            <addFetcher.Form key={addFormKey} method="post">
                <input type="hidden" name="intent" value="create" />
 
                <label>
@@ -227,7 +265,7 @@ export default function Contacts() {
                      name="name"
                      required
                      placeholder="John Doe"
-                     disabled={isSubmitting}
+                     disabled={addFetcher.state === "submitting"}
                   />
                </label>
 
@@ -239,19 +277,23 @@ export default function Contacts() {
                      required
                      placeholder="4915758278556"
                      pattern="[0-9]+"
-                     disabled={isSubmitting}
+                     disabled={addFetcher.state === "submitting"}
                   />
                </label>
 
-               <button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Adding..." : "Add Contact"}
+               <button type="submit" disabled={addFetcher.state === "submitting"} style={{ display: "flex", alignItems: "center", gap: "0.5rem", justifyContent: "center" }}>
+                  <UserPlus size={18} />
+                  {addFetcher.state === "submitting" ? "Adding..." : "Add Contact"}
                </button>
-            </fetcher.Form>
+            </addFetcher.Form>
          </div>
 
          {/* Contacts List */}
          <div className="card">
-            <h2>📋 Your Contacts</h2>
+            <h2 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+               <Users size={22} />
+               Your Contacts
+            </h2>
             {contacts.length === 0 ? (
                <p className="small">
                   No contacts yet. Add your first contact above!
@@ -281,11 +323,15 @@ export default function Contacts() {
                                     fontSize: "0.85rem",
                                     marginTop: 0,
                                     marginRight: "0.5rem",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "0.3rem",
                                  }}
                               >
+                                 <Edit2 size={14} />
                                  Edit
                               </button>
-                              <fetcher.Form
+                              <deleteFetcher.Form
                                  method="post"
                                  style={{ display: "inline" }}
                                  onSubmit={(e) => {
@@ -308,10 +354,11 @@ export default function Contacts() {
                                     name="id"
                                     value={contact.id}
                                  />
-                                 <button type="submit" className="btn-cancel">
+                                 <button type="submit" className="btn-cancel" style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+                                    <Trash2 size={14} />
                                     Delete
                                  </button>
-                              </fetcher.Form>
+                              </deleteFetcher.Form>
                            </td>
                         </tr>
                      ))}
@@ -346,8 +393,11 @@ export default function Contacts() {
                   }}
                   onClick={(e) => e.stopPropagation()}
                >
-                  <h2>✏️ Edit Contact</h2>
-                  <fetcher.Form method="post">
+                  <h2 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                     <Edit2 size={22} />
+                     Edit Contact
+                  </h2>
+                  <editFetcher.Form key={editingContact.id} method="post">
                      <input type="hidden" name="intent" value="update" />
                      <input type="hidden" name="id" value={editingContact.id} />
 
@@ -358,7 +408,7 @@ export default function Contacts() {
                            name="name"
                            required
                            defaultValue={editingContact.name}
-                           disabled={isSubmitting}
+                           disabled={editFetcher.state === "submitting"}
                         />
                      </label>
 
@@ -370,12 +420,13 @@ export default function Contacts() {
                            required
                            defaultValue={editingContact.phone}
                            pattern="[0-9]+"
-                           disabled={isSubmitting}
+                           disabled={editFetcher.state === "submitting"}
                         />
                      </label>
 
-                     <button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? "Saving..." : "Save Changes"}
+                     <button type="submit" disabled={editFetcher.state === "submitting"} style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", justifyContent: "center" }}>
+                        <Save size={16} />
+                        {editFetcher.state === "submitting" ? "Saving..." : "Save Changes"}
                      </button>
                      <button
                         type="button"
@@ -383,11 +434,15 @@ export default function Contacts() {
                         style={{
                            background: "#6b7280",
                            marginLeft: "0.5rem",
+                           display: "inline-flex",
+                           alignItems: "center",
+                           gap: "0.4rem",
                         }}
                      >
+                        <X size={16} />
                         Cancel
                      </button>
-                  </fetcher.Form>
+                  </editFetcher.Form>
                </div>
             </div>
          )}
