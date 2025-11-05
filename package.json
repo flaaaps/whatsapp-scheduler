@@ -30,6 +30,8 @@
       "@remix-run/node": "^2.17.2",
       "@remix-run/react": "^2.17.2",
       "@whiskeysockets/baileys": "^7.0.0-rc.6",
+      "croner": "^9.1.0",
+      "cronstrue": "^3.9.0",
       "cross-env": "^10.1.0",
       "express": "^5.1.0",
       "express-basic-auth": "^1.2.1",

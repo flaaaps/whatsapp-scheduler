@@ -9,7 +9,7 @@ import {
    Link,
    useRevalidator,
 } from "@remix-run/react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import type { AppLoadContext } from "~/.server/context.server";
 import {
    Calendar,
@@ -21,7 +21,11 @@ import {
    Repeat,
    X,
    Send,
+   CheckCircle,
+   XCircle,
 } from "lucide-react";
+import { Cron } from "croner";
+import cronstrue from "cronstrue";
 
 interface Contact {
    id: number;
@@ -233,10 +237,36 @@ export default function Index() {
    const [mode, setMode] = useState<"once" | "cron">("once");
    const prevStatusRef = useRef(status.status);
    const [formKey, setFormKey] = useState(0);
+   const [cronInput, setCronInput] = useState("");
 
    const isSubmitting = fetcher.state === "submitting";
    const isConnected = status.status === "connected";
    const canSchedule = isConnected && !isSubmitting;
+
+   // Validate and parse CRON expression
+   const cronInfo = useMemo(() => {
+      if (!cronInput || mode !== "cron") {
+         return null;
+      }
+
+      try {
+         const job = new Cron(cronInput, { paused: true });
+         const nextExecutions = job.nextRuns(3).map(date => date.toLocaleString());
+         const description = cronstrue.toString(cronInput);
+
+         return {
+            isValid: true,
+            description,
+            nextExecutions
+         };
+      } catch (error) {
+         return {
+            isValid: false,
+            description: "Invalid CRON expression",
+            nextExecutions: []
+         };
+      }
+   }, [cronInput, mode]);
 
    useEffect(() => {
       if (
@@ -245,6 +275,7 @@ export default function Index() {
       ) {
          setFormKey((prev) => prev + 1);
          setMode("once");
+         setCronInput("");
       }
    }, [fetcher.data?.success, fetcher.data?.message]);
 
@@ -425,7 +456,10 @@ export default function Index() {
                <select
                   name="mode"
                   value={mode}
-                  onChange={(e) => setMode(e.target.value as "once" | "cron")}
+                  onChange={(e) => {
+                     setMode(e.target.value as "once" | "cron");
+                     setCronInput("");
+                  }}
                   disabled={!isConnected}
                >
                   <option value="once">Send once at specific time</option>
@@ -445,22 +479,58 @@ export default function Index() {
                   />
                </label>
             ) : (
-               <label>
-                  CRON Expression
-                  <input
-                     key="cron"
-                     type="text"
-                     name="cron"
-                     placeholder="0 9 * * *"
-                     required
-                     pattern="^(\*|([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])|\*\/([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])) (\*|([0-9]|1[0-9]|2[0-3])|\*\/([0-9]|1[0-9]|2[0-3])) (\*|([1-9]|1[0-9]|2[0-9]|3[0-1])|\*\/([1-9]|1[0-9]|2[0-9]|3[0-1])) (\*|([1-9]|1[0-2])|\*\/([1-9]|1[0-2])) (\*|([0-6])|\*\/([0-6]))$"
-                     disabled={!isConnected}
-                  />
-                  <small className="small">
-                     Examples: "0 9 * * *" (daily at 9am), "0 */2 * * *" (every
-                     2 hours)
-                  </small>
-               </label>
+               <>
+                  <label>
+                     CRON Expression
+                     <input
+                        key="cron"
+                        type="text"
+                        name="cron"
+                        placeholder="0 9 * * *"
+                        required
+                        pattern="^(\*|([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])|\*\/([0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9])) (\*|([0-9]|1[0-9]|2[0-3])|\*\/([0-9]|1[0-9]|2[0-3])) (\*|([1-9]|1[0-9]|2[0-9]|3[0-1])|\*\/([1-9]|1[0-9]|2[0-9]|3[0-1])) (\*|([1-9]|1[0-2])|\*\/([1-9]|1[0-2])) (\*|([0-6])|\*\/([0-6]))$"
+                        disabled={!isConnected}
+                        value={cronInput}
+                        onChange={(e) => setCronInput(e.target.value)}
+                     />
+                     <small className="small">
+                        Examples: "0 9 * * *" (daily at 9am), "0 */2 * * *" (every
+                        2 hours)
+                     </small>
+                  </label>
+
+                  {cronInfo && cronInput && (
+                     <div style={{
+                        marginTop: "0.75rem",
+                        padding: "0.75rem",
+                        borderRadius: "6px",
+                        border: cronInfo.isValid ? "1px solid #16a34a" : "1px solid #dc2626",
+                        background: cronInfo.isValid ? "#f0fdf4" : "#fef2f2"
+                     }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                           {cronInfo.isValid ? (
+                              <CheckCircle size={18} color="#16a34a" />
+                           ) : (
+                              <XCircle size={18} color="#dc2626" />
+                           )}
+                           <strong style={{ color: cronInfo.isValid ? "#15803d" : "#991b1b" }}>
+                              {cronInfo.description}
+                           </strong>
+                        </div>
+
+                        {cronInfo.isValid && cronInfo.nextExecutions.length > 0 && (
+                           <div style={{ fontSize: "0.85rem", color: "#166534" }}>
+                              <div style={{ fontWeight: 500, marginBottom: "0.25rem" }}>Next executions:</div>
+                              <ul style={{ margin: 0, paddingLeft: "1.5rem" }}>
+                                 {cronInfo.nextExecutions.map((time, i) => (
+                                    <li key={i}>{time}</li>
+                                 ))}
+                              </ul>
+                           </div>
+                        )}
+                     </div>
+                  )}
+               </>
             )}
 
             <button type="submit" disabled={!canSchedule} style={{ display: "flex", alignItems: "center", gap: "0.5rem", justifyContent: "center" }}>
