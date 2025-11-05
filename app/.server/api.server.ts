@@ -2,13 +2,13 @@ import { Router } from "express";
 import {
   getConnectionStatus,
   getCurrentUser,
-} from "./whatsapp.server.js";
+} from "./whatsapp.server";
 import {
   scheduleCron,
   scheduleOnce,
   cancelScheduledJob,
   getAllScheduledJobs,
-} from "./scheduler.server.js";
+} from "./scheduler.server";
 
 const router = Router();
 

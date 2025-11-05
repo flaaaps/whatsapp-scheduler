@@ -4,14 +4,14 @@
 import express from "express";
 import { createRequestHandler } from "@remix-run/express";
 import basicAuth from "express-basic-auth";
-import { initializeWhatsApp } from "./app/.server/whatsapp.server.js";
-import { initializeDatabase, closeDatabase } from "./app/.server/db.server.js";
-import { AUTH_CONFIG, PUBLIC_DIR, PORT } from "./app/.server/constants.server.js";
-import apiRouter from "./app/.server/api.server.js";
-import * as whatsappService from "./app/.server/whatsapp.server.js";
-import * as schedulerService from "./app/.server/scheduler.server.js";
-import * as databaseService from "./app/.server/db.server.js";
-import type { AppServices } from "./app/.server/context.server.js";
+import { initializeWhatsApp } from "./app/.server/whatsapp.server";
+import { initializeDatabase, closeDatabase } from "./app/.server/db.server";
+import { AUTH_CONFIG, PUBLIC_DIR, PORT } from "./app/.server/constants.server";
+import apiRouter from "./app/.server/api.server";
+import * as whatsappService from "./app/.server/whatsapp.server";
+import * as schedulerService from "./app/.server/scheduler.server";
+import * as databaseService from "./app/.server/db.server";
+import type { AppServices } from "./app/.server/context.server";
 
 async function createServer() {
   const app = express();

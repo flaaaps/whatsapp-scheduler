@@ -11,18 +11,14 @@ COPY package*.json .npmrc ./
 RUN npm ci
 
 # Copy configuration files
-COPY tsconfig.json vite.config.ts ./
+COPY tsconfig.json vite.config.ts tsup.config.ts ./
 
 # Copy source code
 COPY server.ts ./
 COPY app ./app
-COPY public ./public
 
-# Build Remix
+# Build both Remix and backend with tsup
 RUN npm run build
-
-# Compile server.ts and app/.server files to JavaScript
-RUN npx tsc server.ts app/.server/*.ts app/types.ts --outDir . --module esnext --target esnext --moduleResolution bundler --esModuleInterop --skipLibCheck --rootDir .
 
 # Stage 2: Production
 FROM node:20-alpine
@@ -37,11 +33,10 @@ RUN npm ci --omit=dev --legacy-peer-deps
 
 # Copy built files from builder stage
 COPY --from=builder /app/build ./build
-COPY --from=builder /app/server.js ./server.js
-COPY --from=builder /app/app ./app
+COPY --from=builder /app/dist ./dist
 
 # Expose port
 EXPOSE 3000
 
 # Start the production server
-CMD ["node", "server.js"]
+CMD ["node", "dist/server.js"]

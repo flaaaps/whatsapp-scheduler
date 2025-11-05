@@ -1,6 +1,6 @@
 import { Pool } from "pg"
-import { DB_CONFIG } from "./constants.server.js"
-import { Contact, CreateContactRequest, UpdateContactRequest } from "../types.js"
+import { DB_CONFIG } from "./constants.server"
+import { Contact, CreateContactRequest, UpdateContactRequest } from "../types"
 
 let pool: Pool | null = null
 

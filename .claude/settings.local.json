@@ -7,7 +7,10 @@
       "Bash(cat:*)",
       "Bash(tree:*)",
       "Bash(npm run dev:*)",
-      "Bash(docker compose:*)"
+      "Bash(docker compose:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run build:server:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

@@ -43,8 +43,6 @@ services:
     volumes:
       # Persist WhatsApp authentication
       - ./auth:/app/auth
-      # Mount public directory (if you need to update UI files)
-      - ./public:/app/public
     networks:
       - whatsapp-network
     depends_on:

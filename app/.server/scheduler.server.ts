@@ -1,6 +1,6 @@
 import nodeCron from "node-cron"
-import { ScheduledJob } from "../types.js"
-import { sendMessage } from "./whatsapp.server.js"
+import { ScheduledJob } from "../types"
+import { sendMessage } from "./whatsapp.server"
 
 const scheduled = new Map<string, ScheduledJob>()
 
