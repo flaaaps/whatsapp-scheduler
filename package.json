@@ -1,14 +1,16 @@
 {
   "name": "wa-test",
   "version": "1.0.0",
+  "type": "module",
   "description": "WhatsApp message scheduler with TypeScript",
-  "main": "dist/index.js",
+  "main": "server.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "tsx watch src/index.ts",
-    "clean": "rm -rf dist",
+    "build": "remix vite:build",
+    "start": "cross-env NODE_ENV=production node server.js",
+    "dev": "cross-env NODE_ENV=development tsx server.ts",
+    "clean": "rm -rf build dist",
     "prebuild": "npm run clean",
+    "typecheck": "tsc --noEmit",
     "docker:run": "docker compose up",
     "docker:build:run": "docker compose up --build"
   },
@@ -21,20 +23,32 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@remix-run/express": "^2.17.2",
+    "@remix-run/node": "^2.17.2",
+    "@remix-run/react": "^2.17.2",
     "@whiskeysockets/baileys": "^7.0.0-rc.6",
+    "cross-env": "^10.1.0",
     "express": "^5.1.0",
     "express-basic-auth": "^1.2.1",
+    "isbot": "^5.1.32",
     "node-cron": "^4.2.1",
     "pg": "^8.16.3",
-    "qrcode-terminal": "^0.12.0"
+    "qrcode-terminal": "^0.12.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@remix-run/dev": "^2.17.2",
     "@types/express": "^5.0.5",
     "@types/node": "^24.10.0",
     "@types/node-cron": "^3.0.11",
     "@types/pg": "^8.15.6",
     "@types/qrcode-terminal": "^0.12.2",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
     "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1",
+    "vite-tsconfig-paths": "^5.1.4"
   }
 }

@@ -1,11 +1,13 @@
 import nodeCron from "node-cron"
-import { ScheduledJob } from "../types"
-import { sendMessage } from "./whatsapp"
+import { ScheduledJob } from "../types.js"
+import { sendMessage } from "./whatsapp.server.js"
 
 const scheduled = new Map<string, ScheduledJob>()
 
 export function scheduleCron(to: string, text: string, cron: string): string {
+    console.log(`🕐 Scheduling CRON job: ${cron} to ${to}`)
     const job = nodeCron.schedule(cron, async () => {
+        console.log(`⏰ CRON job triggered! Sending to ${to}`)
         try {
             await sendMessage(to, text)
             console.log(`📤 Sent CRON message to ${to}: ${text}`)
@@ -13,17 +15,32 @@ export function scheduleCron(to: string, text: string, cron: string): string {
             console.error("Failed to send CRON message:", err)
         }
     })
+    job.start() // Explicitly start the cron job
     const id = Date.now().toString()
     scheduled.set(id, { id, to, text, type: "cron", cron, job })
+    console.log(`✅ CRON job scheduled with ID: ${id}, Map size: ${scheduled.size}`)
     return id
 }
 
 export function scheduleOnce(to: string, text: string, timestamp: number): string {
     const delay = timestamp - Date.now()
-    if (delay <= 0) throw new Error("Time must be in the future")
+    const scheduledTime = new Date(timestamp)
+    const now = new Date()
+
+    console.log(`🕐 Scheduling one-time message:`)
+    console.log(`   To: ${to}`)
+    console.log(`   Current time: ${now.toISOString()} (${Date.now()})`)
+    console.log(`   Scheduled time: ${scheduledTime.toISOString()} (${timestamp})`)
+    console.log(`   Delay: ${delay}ms (${(delay / 1000 / 60).toFixed(2)} minutes)`)
+
+    if (delay <= 0) {
+        console.error(`❌ Time is in the past! Delay: ${delay}ms`)
+        throw new Error("Time must be in the future")
+    }
 
     const id = Date.now().toString()
     const timeout = setTimeout(async () => {
+        console.log(`⏰ One-time job triggered! Sending to ${to}`)
         try {
             await sendMessage(to, text)
             console.log(`📤 Sent one-time message to ${to}: ${text}`)
@@ -38,9 +55,11 @@ export function scheduleOnce(to: string, text: string, timestamp: number): strin
         to,
         text,
         type: "once",
-        when: new Date(timestamp).toISOString(),
+        when: scheduledTime.toISOString(),
         timeout,
     })
+
+    console.log(`✅ One-time job scheduled with ID: ${id}, Map size: ${scheduled.size}`)
     return id
 }
 

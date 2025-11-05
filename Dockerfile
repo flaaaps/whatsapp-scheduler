@@ -1,30 +1,47 @@
-# Use Node.js 20 LTS (required by Baileys)
-FROM node:20-alpine
+# Multi-stage build for Remix + Express application
+# Stage 1: Build
+FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files and npm config
+COPY package*.json .npmrc ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including dev dependencies for build)
+RUN npm ci
 
-# Install TypeScript dependencies for building
-RUN npm install --save-dev typescript
+# Copy configuration files
+COPY tsconfig.json vite.config.ts ./
 
 # Copy source code
-COPY tsconfig.json ./
-COPY src ./src
+COPY server.ts ./
+COPY app ./app
+COPY public ./public
 
-# Build TypeScript
+# Build Remix
 RUN npm run build
 
-# Remove dev dependencies after build
-RUN npm prune --production
+# Compile server.ts and app/.server files to JavaScript
+RUN npx tsc server.ts app/.server/*.ts app/types.ts --outDir . --module esnext --target esnext --moduleResolution bundler --esModuleInterop --skipLibCheck --rootDir .
+
+# Stage 2: Production
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files and npm config
+COPY package*.json .npmrc ./
+
+# Install only production dependencies
+RUN npm ci --omit=dev --legacy-peer-deps
+
+# Copy built files from builder stage
+COPY --from=builder /app/build ./build
+COPY --from=builder /app/server.js ./server.js
+COPY --from=builder /app/app ./app
 
 # Expose port
 EXPOSE 3000
 
-# Start the application
-CMD ["node", "dist/index.js"]
+# Start the production server
+CMD ["node", "server.js"]

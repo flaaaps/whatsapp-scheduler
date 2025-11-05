@@ -4,6 +4,8 @@ npm-debug.log
 
 # Build output
 dist
+build
+.remix
 
 # Git
 .git

@@ -7,7 +7,7 @@ import makeWASocket, {
     WASocket,
 } from "@whiskeysockets/baileys"
 import { Boom } from "@hapi/boom"
-import { AUTH_DIR, WHATSAPP_CONNECTION_NAME } from "../utils/constants";
+import { AUTH_DIR, WHATSAPP_CONNECTION_NAME } from "./constants.server.js";
 
 let sock: WASocket | null = null
 

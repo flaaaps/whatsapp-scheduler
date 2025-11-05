@@ -4,37 +4,56 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-WhatsApp message scheduler built with TypeScript, @whiskeysockets/baileys v7, Express, and node-cron. The application provides a web UI for scheduling WhatsApp messages either as one-time sends or recurring CRON jobs.
+WhatsApp message scheduler built with:
+- **Backend**: @whiskeysockets/baileys v7, Express 5, PostgreSQL, node-cron
+- **Frontend**: Remix 2 with Vite 6, React 19, Server-Side Rendering
+- **Infrastructure**: Docker, TypeScript, ES Modules
+- **Node Version**: 20+ (required by Baileys and other dependencies)
+
+The application provides a modern web UI for scheduling WhatsApp messages (one-time or recurring CRON jobs) and managing contacts.
 
 ## Running the Application
+
+**IMPORTANT**: Node.js 20 or higher is required.
 
 ### Local Development
 
 ```bash
-# Development mode (with hot reload)
+# Start the development server with hot reload
 npm run dev
+```
 
-# Production build
+The application will:
+- Start on port 3000
+- Initialize WhatsApp connection (QR code on first run)
+- Serve Remix UI with Vite hot module replacement
+- Connect to PostgreSQL database (if configured)
+- Persist WhatsApp auth in the `auth/` directory
+
+### Production Mode
+
+```bash
+# Build both Remix frontend and Express backend
 npm run build
 
-# Run production build
+# Start the production server
 npm start
 ```
 
-### Docker
+### Docker (Recommended for Production)
 
 ```bash
-# Build and start the container
+# Build and start with docker-compose
 docker-compose up -d
 
 # View logs (to see QR code for first-time setup)
 docker-compose logs -f
 
-# Stop the container
-docker-compose down
-
 # Rebuild after code changes
 docker-compose up -d --build
+
+# Stop the container
+docker-compose down
 ```
 
 ### Environment Variables
@@ -44,49 +63,84 @@ Create a `.env` file in the project root:
 ADMIN_USER=admin
 ADMIN_PASS=your-secure-password
 PORT=3000
-```
 
-The application will:
-- Start on port 3000
-- Display a QR code in the terminal for WhatsApp authentication (on first run)
-- Serve the web UI at http://localhost:3000
-- Persist authentication in the `auth/` directory
+# PostgreSQL (used when running locally, auto-configured in Docker)
+POSTGRES_USER=whatsapp
+POSTGRES_PASSWORD=your-db-password
+POSTGRES_DB=whatsapp_scheduler
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+```
 
 ## Project Structure
 
 ```
 whatsapp-scheduler/
-├── src/
+├── src/                      # Backend source (TypeScript)
 │   ├── index.ts              # Main entry point
-│   ├── app.ts                # Express app configuration
+│   ├── server.ts             # Express + Remix server integration
 │   ├── types/
 │   │   └── index.ts          # TypeScript interfaces and types
 │   ├── services/
 │   │   ├── whatsapp.ts       # WhatsApp connection & messaging
-│   │   └── scheduler.ts      # Job scheduling logic
+│   │   ├── scheduler.ts      # Job scheduling logic
+│   │   └── database.ts       # PostgreSQL operations
 │   ├── routes/
-│   │   └── api.ts            # API route handlers
+│   │   └── api.ts            # REST API route handlers
 │   └── utils/
 │       └── constants.ts      # Configuration constants
-├── public/                   # Static web UI files
-├── dist/                     # Compiled JavaScript (generated)
-├── auth/                     # WhatsApp auth state (generated)
-└── tsconfig.json            # TypeScript configuration
+├── app/                      # Remix frontend source (TypeScript + React)
+│   ├── root.tsx              # Root Remix layout
+│   ├── entry.client.tsx      # Client-side hydration entry
+│   ├── entry.server.tsx      # Server-side rendering entry
+│   ├── styles/
+│   │   └── global.css        # Global styles
+│   └── routes/
+│       ├── _index.tsx        # Main scheduler page (/)
+│       └── contacts.tsx      # Contacts management page (/contacts)
+├── public/                   # Static assets (images, favicon, etc.)
+├── dist/                     # Compiled backend JavaScript (generated)
+├── build/                    # Compiled Remix frontend (generated)
+├── auth/                     # WhatsApp auth state (generated/mounted)
+├── vite.config.ts            # Vite + Remix configuration
+├── tsconfig.json             # TypeScript config (shared)
+├── tsconfig.server.json      # TypeScript config (backend only)
+├── Dockerfile                # Multi-stage Docker build
+└── docker-compose.yml        # Docker orchestration
 ```
 
 ## Development
 
 ### Build System
-- **TypeScript**: Source files in `src/` directory
-- **Compiler**: TypeScript compiles to ES modules in `dist/` directory
-- **Dev Mode**: Uses `tsx` for hot-reloading during development
-- **Source**: `src/` → **Output**: `dist/`
+- **Backend**: TypeScript → ES Modules (`src/` → `dist/`)
+- **Frontend**: Remix + Vite → Server + Client bundles (`app/` → `build/`)
+- **Dev Mode**:
+  - Uses `tsx` to run backend with hot-reload
+  - Vite middleware integrated into Express for frontend HMR
+- **Prod Mode**: Pre-built bundles served by Express
+
+### Architecture: Hybrid Remix + Express
+
+The application uses a **hybrid architecture**:
+1. **Remix handles all UI routes** (`/`, `/contacts`, etc.)
+2. **Express handles all API routes** (`/api/*`, `/send`)
+3. **Vite is integrated into Express** via middleware in development
+4. **Authentication** (Basic Auth) is applied globally to both Remix and API routes
+
+**Key Integration Points:**
+- `src/server.ts` - Creates Express app with Remix request handler
+- API routes take precedence over Remix routes
+- Remix loaders/actions call Express API endpoints internally
+- Both share the same authentication context
 
 ### Scripts
-- `npm run dev` - Development mode with auto-reload
-- `npm run build` - Compile TypeScript to JavaScript
-- `npm start` - Run the compiled JavaScript
-- `npm run clean` - Remove dist folder
+- `npm run dev` - Development mode with hot-reload (runs `tsx src/index.ts`)
+- `npm run build` - Build both Remix (`build:remix`) and backend (`build:server`)
+- `npm run build:remix` - Build Remix app only
+- `npm run build:server` - Compile TypeScript backend only
+- `npm start` - Run the production build
+- `npm run clean` - Remove dist/ and build/ folders
+- `npm run typecheck` - Type-check without building
 
 ## Authentication
 
@@ -95,22 +149,25 @@ The app uses HTTP Basic Auth:
 - Default: `ADMIN_USER` and `ADMIN_PASS`
 - All web UI and API endpoints require authentication
 - Configuration in `src/utils/constants.ts`
+- Passed to Remix via `getLoadContext()` in server.ts
 
 ## Architecture
 
-### Core Modules
+### Backend Services
 
 #### 1. Entry Point (`src/index.ts`)
 - Initializes database connection
 - Initializes WhatsApp connection
-- Starts Express server
+- Creates and starts Express server (with Remix integration)
 - Graceful shutdown handlers
-- Main application orchestration
 
-#### 2. Express App (`src/app.ts`)
+#### 2. Server (`src/server.ts`)
 - Express application setup
-- Middleware configuration (JSON parsing, auth, static files)
-- Route mounting
+- Vite dev server integration (development mode)
+- Basic Auth middleware
+- API routes mounting
+- Remix request handler
+- Static file serving
 
 #### 3. Database Service (`src/services/database.ts`)
 **Exports:**
@@ -175,25 +232,40 @@ The app uses HTTP Basic Auth:
 - Duplicate phone number detection
 - Phone format validation
 
-#### 7. Types (`src/types/index.ts`)
-**Interfaces:**
-- `ScheduledCronJob` - Recurring job type
-- `ScheduledOnceJob` - One-time job type
-- `ScheduledJob` - Union type
-- `Contact` - Contact information with database fields
-- `CreateContactRequest` - Request body for creating contacts
-- `UpdateContactRequest` - Request body for updating contacts
-- `ScheduleRequest` - API request types
-- `SendRequest` - API request types
+### Frontend (Remix)
 
-#### 8. Constants (`src/utils/constants.ts`)
-**Exports:**
-- `ROOT_DIR` - Project root directory
-- `AUTH_DIR` - WhatsApp auth directory
-- `PUBLIC_DIR` - Static files directory
-- `PORT` - Server port (default: 3000)
-- `AUTH_CONFIG` - Basic auth configuration
-- `DB_CONFIG` - PostgreSQL database configuration
+#### Routes
+
+**Main Scheduler** (`app/routes/_index.tsx`):
+- Loader: Fetches status and contacts from API
+- Action: Handles schedule creation and job cancellation
+- UI Features:
+  - Contact dropdown selector
+  - Message textarea
+  - Mode selector (once/cron)
+  - Dynamic fields based on mode
+  - Scheduled jobs table
+  - Real-time status badge
+
+**Contacts Management** (`app/routes/contacts.tsx`):
+- Loader: Fetches all contacts from API
+- Action: Handles create/update/delete operations
+- UI Features:
+  - Add contact form
+  - Contacts table
+  - Edit modal with overlay
+  - Delete confirmation
+  - Success/error messages
+  - Optimistic UI updates via useFetcher
+
+#### Data Flow
+1. User interacts with Remix UI
+2. Form submission → Remix action
+3. Action calls Express API endpoint (internal fetch)
+4. API interacts with database/services
+5. Response returned to action
+6. Loader revalidates data
+7. UI updates
 
 ### WhatsApp Message Format
 
@@ -203,10 +275,10 @@ All messages use Baileys JID format:
 
 ### Contacts System
 
-Contacts are stored in a PostgreSQL database and managed through:
+Contacts are stored in PostgreSQL and accessed via:
 - **Database**: `src/services/database.ts` - CRUD operations
 - **API**: `src/routes/api.ts` - RESTful endpoints
-- **UI**: `public/contacts.html` - Management interface
+- **UI**: `app/routes/contacts.tsx` - Remix route with forms
 
 #### Database Schema
 ```sql
@@ -218,41 +290,6 @@ CREATE TABLE contacts (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
-
-#### Contact Fields
-- `id`: Auto-incrementing primary key
-- `name`: Display name
-- `phone`: Full phone number (country code + number, no plus sign, digits only)
-- `phoneDisplay`: Auto-formatted display version (generated on API response)
-- `created_at`: Creation timestamp
-- `updated_at`: Last update timestamp (auto-updated via trigger)
-
-#### Adding/Modifying Contacts
-Use the web UI at `/contacts.html` or interact with the API endpoints directly:
-- POST `/api/contacts` - Create new contact
-- PUT `/api/contacts/:id` - Update contact
-- DELETE `/api/contacts/:id` - Delete contact
-
-## Web UI
-
-**Main Scheduler** (`public/index.html`):
-- Link to contact management page
-- Contact picker (dropdown) or manual phone number input
-- Message textarea
-- Mode selector: one-time or CRON
-- DateTime picker for one-time sends
-- CRON expression input for recurring sends
-- Real-time status display (connected/disconnected)
-- Scheduled jobs table with cancel buttons
-- Auto-refreshes status every 5 seconds
-
-**Contact Management** (`public/contacts.html`):
-- Add new contacts form
-- Contacts table with edit/delete actions
-- Modal for editing contacts
-- Real-time success/error messages
-- Phone number validation
-- Duplicate detection
 
 ## State Management
 
@@ -271,13 +308,26 @@ Use the web UI at `/contacts.html` or interact with the API endpoints directly:
 - `node-cron` - CRON job scheduler
 - `qrcode-terminal` - QR code display for WhatsApp pairing
 - `pg` - PostgreSQL client
+- `@remix-run/node`, `@remix-run/express`, `@remix-run/react` - Remix framework
+- `react`, `react-dom` - React 19
+- `isbot` - Bot detection for SSR
 
 **Development:**
 - `typescript` - TypeScript compiler
 - `tsx` - TypeScript execution with hot-reload
-- `@types/*` - Type definitions for all dependencies (node, express, pg, node-cron, qrcode-terminal)
+- `vite` - Build tool and dev server
+- `@remix-run/dev` - Remix Vite plugin
+- `vite-tsconfig-paths` - Path resolution for Vite
+- `@types/*` - Type definitions
 
 ## Adding New Features
+
+### Adding a new Remix route:
+1. Create route file in `app/routes/`
+2. Export `loader` function for data fetching
+3. Export `action` function for mutations
+4. Export default React component
+5. Add navigation link in other routes
 
 ### Adding a new API endpoint:
 1. Add route handler in `src/routes/api.ts`
@@ -289,38 +339,34 @@ Use the web UI at `/contacts.html` or interact with the API endpoints directly:
 2. Export the function
 3. Use in route handlers in `src/routes/api.ts`
 
-### Adding new WhatsApp features:
-1. Add function in `src/services/whatsapp.ts`
-2. Export the function
-3. Use in services or routes as needed
-
 ## Docker Deployment
 
-The project includes Docker support for easy deployment.
+The project includes Docker support for production deployment.
 
 ### Docker Files
 - **Dockerfile** - Multi-stage build using Node.js 20 Alpine
-- **docker-compose.yml** - Orchestration with volume mounts
-- **.dockerignore** - Excludes unnecessary files from build
+- **docker-compose.yml** - Orchestration with PostgreSQL
+- **.dockerignore** - Excludes build artifacts and node_modules
+
+### Build Process
+1. **Stage 1 (Builder)**: Install all deps → Build Remix + Backend
+2. **Stage 2 (Production)**: Install prod deps → Copy build artifacts
 
 ### Key Features
 - **Persistent Auth**: `auth/` directory mounted as volume
-- **Environment Variables**: Configurable via `.env` or docker-compose
-- **Auto-restart**: Container restarts unless manually stopped
-- **QR Code Access**: Use `docker-compose logs -f` to view QR code
+- **Database**: PostgreSQL service with persistent volume
+- **Environment Variables**: Configurable via docker-compose
+- **Auto-restart**: Both containers restart unless manually stopped
+- **Healthchecks**: Database healthcheck for reliable startup
+- **Internal Networking**: App connects to DB without port exposure
 
 ### Volume Mounts
 - `./auth:/app/auth` - WhatsApp authentication persistence
-- `./public:/app/public` - Static web UI files
-
-### First-Time Setup with Docker
-1. Create `.env` file with credentials
-2. Run `docker-compose up -d`
-3. View logs: `docker-compose logs -f`
-4. Scan QR code with WhatsApp
-5. Access UI at `http://localhost:3000`
+- `postgres_data:/var/lib/postgresql/data` - Database persistence
 
 ## Common Issues
+
+**Node Version Error**: Ensure you're using Node.js 20 or higher. Check with `node -v`.
 
 **QR Code Not Scanning**: The QR code appears in the terminal. Scan it with WhatsApp's "Linked Devices" feature.
 
@@ -328,15 +374,19 @@ The project includes Docker support for easy deployment.
 
 **Scheduled Jobs Lost**: Jobs are in-memory only. Server restart clears all schedules.
 
-**TypeScript Errors**: Run `npm run build` to check for type errors before deployment.
+**TypeScript Errors**: Run `npm run typecheck` to check for type errors before deployment.
 
 **Import Errors**: Remember to use `.js` extension in imports even though source files are `.ts` (ES modules requirement).
+
+**Vite Compatibility**: The project uses Vite 6 for compatibility with Remix 2.17. Vite 7 is not yet supported.
+
+**Database Connection**: When running locally (not Docker), ensure PostgreSQL is running and environment variables are set in `.env`.
 
 ## Module System
 
 Uses ES modules with TypeScript:
-- Source files use `.ts` extension in `src/` directory
-- Compiled to ESM in `dist/` directory preserving folder structure
 - `type: "module"` in package.json
-- All imports use ESM syntax with `.js` extensions
-- Module resolution: Node.js style
+- All backend imports use `.js` extensions (required by Node.js ES modules)
+- Frontend (Remix) uses standard TypeScript imports
+- Backend compiled to ES2020 modules
+- Module resolution: "bundler" for Remix, standard ES module resolution for backend

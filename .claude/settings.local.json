@@ -5,7 +5,9 @@
       "Bash(test:*)",
       "Bash(npm run build:*)",
       "Bash(cat:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(npm run dev:*)",
+      "Bash(docker compose:*)"
     ],
     "deny": [],
     "ask": []

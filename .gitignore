@@ -5,6 +5,10 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# Remix build output
+build/
+.remix/
+
 # Environment variables
 .env
 .env.local
