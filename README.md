@@ -31,8 +31,9 @@ A WhatsApp message scheduler built with TypeScript, Baileys v7, Express, Postgre
    ```bash
    docker-compose logs -f
    ```
-6. Scan the QR code with WhatsApp (Linked Devices)
-7. Access the web UI at `http://localhost:3000`
+6. Access the web UI at `http://localhost:3000`
+7. Scan the QR code with your phone to link your whatsapp account.
+8. Enjoy!
 
 ### Local Development
 

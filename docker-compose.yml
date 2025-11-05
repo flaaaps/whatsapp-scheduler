@@ -47,7 +47,7 @@ services:
          - DB_NAME=${POSTGRES_DB:-whatsapp_scheduler}
       volumes:
          # Persist WhatsApp authentication
-         - auth_data:/app/auth
+         - ./auth:/app/auth
       networks:
          - whatsapp-network
       depends_on:
@@ -63,4 +63,3 @@ networks:
 
 volumes:
    postgres_data:
-   auth_data:
