@@ -38,6 +38,7 @@ services:
          - PORT=3000
          - ADMIN_USER=${ADMIN_USER:-admin}
          - ADMIN_PASS=${ADMIN_PASS:-password}
+         - WHATSAPP_CONNECTION_NAME=${WHATSAPP_CONNECTION_NAME}
          - NODE_ENV=production
          - DB_HOST=postgres
          - DB_PORT=5432
@@ -46,7 +47,7 @@ services:
          - DB_NAME=${POSTGRES_DB:-whatsapp_scheduler}
       volumes:
          # Persist WhatsApp authentication
-         - ./auth:/app/auth
+         - auth_data:/app/auth
       networks:
          - whatsapp-network
       depends_on:
@@ -62,3 +63,4 @@ networks:
 
 volumes:
    postgres_data:
+   auth_data:
