@@ -1,212 +1,103 @@
-* {
-   box-sizing: border-box;
-   margin: 0;
-   padding: 0;
+@import "tailwindcss";
+
+:root {
+	--background: 0 0% 100%;
+	--foreground: 222.2 84% 4.9%;
+	--card: 0 0% 100%;
+	--card-foreground: 222.2 84% 4.9%;
+	--popover: 0 0% 100%;
+	--popover-foreground: 222.2 84% 4.9%;
+	--primary: 221.2 83.2% 53.3%;
+	--primary-foreground: 210 40% 98%;
+	--secondary: 210 40% 96.1%;
+	--secondary-foreground: 222.2 47.4% 11.2%;
+	--muted: 210 40% 96.1%;
+	--muted-foreground: 215.4 16.3% 46.9%;
+	--accent: 210 40% 96.1%;
+	--accent-foreground: 222.2 47.4% 11.2%;
+	--destructive: 0 84.2% 60.2%;
+	--destructive-foreground: 210 40% 98%;
+	--warning: 38 92% 50%;
+	--warning-foreground: 48 96% 89%;
+	--border: 214.3 31.8% 91.4%;
+	--input: 214.3 31.8% 91.4%;
+	--ring: 221.2 83.2% 53.3%;
+	--radius: 0.5rem;
+	--chart-1: 12 76% 61%;
+	--chart-2: 173 58% 39%;
+	--chart-3: 197 37% 24%;
+	--chart-4: 43 74% 66%;
+	--chart-5: 27 87% 67%;
 }
 
-body {
-   font-family:
-      system-ui,
-      -apple-system,
-      sans-serif;
-   max-width: 700px;
-   margin: 2rem auto;
-   padding: 1rem;
-   background: #f9fafb;
-   color: #111;
+.dark {
+	--background: 222.2 84% 4.9%;
+	--foreground: 210 40% 98%;
+	--card: 222.2 84% 4.9%;
+	--card-foreground: 210 40% 98%;
+	--popover: 222.2 84% 4.9%;
+	--popover-foreground: 210 40% 98%;
+	--primary: 217.2 91.2% 59.8%;
+	--primary-foreground: 222.2 47.4% 11.2%;
+	--secondary: 217.2 32.6% 17.5%;
+	--secondary-foreground: 210 40% 98%;
+	--muted: 217.2 32.6% 17.5%;
+	--muted-foreground: 215 20.2% 65.1%;
+	--accent: 217.2 32.6% 17.5%;
+	--accent-foreground: 210 40% 98%;
+	--destructive: 0 62.8% 30.6%;
+	--destructive-foreground: 210 40% 98%;
+	--warning: 48 96% 53%;
+	--warning-foreground: 26 83% 14%;
+	--border: 217.2 32.6% 17.5%;
+	--input: 217.2 32.6% 17.5%;
+	--ring: 224.3 76.3% 48%;
+	--chart-1: 220 70% 50%;
+	--chart-2: 160 60% 45%;
+	--chart-3: 30 80% 55%;
+	--chart-4: 280 65% 60%;
+	--chart-5: 340 75% 55%;
 }
 
-h1 {
-   font-size: 1.5rem;
-   margin-bottom: 1rem;
+@theme inline {
+	--color-background: hsl(var(--background));
+	--color-foreground: hsl(var(--foreground));
+	--color-card: hsl(var(--card));
+	--color-card-foreground: hsl(var(--card-foreground));
+	--color-popover: hsl(var(--popover));
+	--color-popover-foreground: hsl(var(--popover-foreground));
+	--color-primary: hsl(var(--primary));
+	--color-primary-foreground: hsl(var(--primary-foreground));
+	--color-secondary: hsl(var(--secondary));
+	--color-secondary-foreground: hsl(var(--secondary-foreground));
+	--color-muted: hsl(var(--muted));
+	--color-muted-foreground: hsl(var(--muted-foreground));
+	--color-accent: hsl(var(--accent));
+	--color-accent-foreground: hsl(var(--accent-foreground));
+	--color-destructive: hsl(var(--destructive));
+	--color-destructive-foreground: hsl(var(--destructive-foreground));
+	--color-warning: hsl(var(--warning));
+	--color-warning-foreground: hsl(var(--warning-foreground));
+	--color-border: hsl(var(--border));
+	--color-input: hsl(var(--input));
+	--color-ring: hsl(var(--ring));
+	--color-chart-1: hsl(var(--chart-1));
+	--color-chart-2: hsl(var(--chart-2));
+	--color-chart-3: hsl(var(--chart-3));
+	--color-chart-4: hsl(var(--chart-4));
+	--color-chart-5: hsl(var(--chart-5));
+
+	--radius-lg: var(--radius);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-sm: calc(var(--radius) - 4px);
 }
 
-h2 {
-   font-size: 1.2rem;
-   margin-bottom: 0.75rem;
-}
-
-.card {
-   background: white;
-   padding: 1rem;
-   border-radius: 8px;
-   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-   margin-bottom: 1.5rem;
-}
-
-label {
-   display: block;
-   margin-top: 0.5rem;
-   font-weight: 500;
-}
-
-input,
-textarea,
-select {
-   width: 100%;
-   padding: 0.5rem;
-   border: 1px solid #ccc;
-   border-radius: 6px;
-   margin-top: 0.25rem;
-   font-size: 1rem;
-}
-
-input:disabled,
-textarea:disabled,
-select:disabled {
-   background: #f3f4f6;
-   color: #6b7280;
-   cursor: not-allowed;
-}
-
-textarea {
-   resize: vertical;
-   min-height: 100px;
-}
-
-button {
-   background: #16a34a;
-   color: white;
-   border: none;
-   border-radius: 6px;
-   padding: 0.6rem 1.2rem;
-   font-size: 1rem;
-   margin-top: 1rem;
-   cursor: pointer;
-}
-
-button:hover {
-   background: #15803d;
-}
-
-button:disabled {
-   background: #9ca3af;
-   cursor: not-allowed;
-}
-
-.badge {
-   display: inline-block;
-   padding: 0.3rem 0.7rem;
-   border-radius: 999px;
-   font-size: 0.8rem;
-   font-weight: 600;
-}
-
-.badge.connected {
-   background: #dcfce7;
-   color: #166534;
-}
-
-.badge.disconnected {
-   background: #fee2e2;
-   color: #991b1b;
-}
-
-table {
-   width: 100%;
-   border-collapse: collapse;
-   margin-top: 0.5rem;
-}
-
-th,
-td {
-   padding: 0.5rem;
-   border-bottom: 1px solid #e5e7eb;
-   text-align: left;
-   font-size: 0.9rem;
-}
-
-th {
-   background: #f3f4f6;
-}
-
-.nav-link {
-   display: inline-block;
-   margin: 1rem 0;
-   padding: 0.5rem 1rem;
-   background: #3b82f6;
-   color: white;
-   text-decoration: none;
-   border-radius: 6px;
-   font-size: 0.9rem;
-}
-
-.nav-link:hover {
-   background: #2563eb;
-}
-
-.btn-cancel {
-   background: #dc2626;
-   padding: 0.3rem 0.6rem;
-   font-size: 0.85rem;
-   margin-top: 0;
-}
-
-.btn-cancel:hover {
-   background: #b91c1c;
-}
-
-.small {
-   font-size: 0.85rem;
-   color: #555;
-}
-
-.error-message {
-   padding: 1rem;
-   background: #fee2e2;
-   color: #991b1b;
-   border-radius: 6px;
-   margin-bottom: 1rem;
-}
-
-.success-message {
-   padding: 1rem;
-   background: #dcfce7;
-   color: #166534;
-   border-radius: 6px;
-   margin-bottom: 1rem;
-}
-
-.qr-container {
-   text-align: center;
-   background: white;
-   border: 2px solid #3b82f6;
-}
-
-.qr-container h3 {
-   margin-bottom: 1rem;
-   color: #1e40af;
-   font-size: 1.1rem;
-}
-
-.qr-code {
-   max-width: 300px;
-   width: 100%;
-   height: auto;
-   margin: 1rem auto;
-   display: block;
-   border: 4px solid #f3f4f6;
-   border-radius: 8px;
-   padding: 0.5rem;
-   background: white;
-}
-
-.qr-container .small {
-   margin-top: 1rem;
-   line-height: 1.6;
-   color: #6b7280;
-}
-
-/* Spinning animation for refresh icon */
-@keyframes spin {
-   from {
-      transform: rotate(0deg);
-   }
-   to {
-      transform: rotate(360deg);
-   }
-}
-
-.spinning {
-   animation: spin 1s linear infinite;
+@layer base {
+	* {
+		border-color: hsl(var(--border));
+	}
+	body {
+		background-color: hsl(var(--background));
+		color: hsl(var(--foreground));
+	}
 }

@@ -6,7 +6,43 @@ import {
 import { useLoaderData, useFetcher, Link } from "@remix-run/react";
 import { useState, useEffect, useRef } from "react";
 import type { AppLoadContext } from "~/.server/context.server";
-import { Contact, UserPlus, Users, Edit2, Trash2, Save, X, ArrowLeft } from "lucide-react";
+import {
+   Contact,
+   UserPlus,
+   Users,
+   Edit2,
+   Trash2,
+   Save,
+   X,
+   ArrowLeft,
+   AlertCircle,
+} from "lucide-react";
+import { Button } from "~/components/ui/button";
+import {
+   Card,
+   CardContent,
+   CardDescription,
+   CardHeader,
+   CardTitle,
+} from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import {
+   Table,
+   TableBody,
+   TableCell,
+   TableHead,
+   TableHeader,
+   TableRow,
+} from "~/components/ui/table";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import {
+   Dialog,
+   DialogContent,
+   DialogDescription,
+   DialogHeader,
+   DialogTitle,
+} from "~/components/ui/dialog";
 
 interface Contact {
    id: number;
@@ -223,198 +259,239 @@ export default function Contacts() {
    }, [addFetcher.state, addFetcher.data?.success]);
 
    return (
-      <div>
-         <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <Contact size={28} />
-            Manage Contacts
-         </h1>
-         <p>Add, edit, and delete your WhatsApp contacts</p>
-
-         <div style={{ marginBottom: "1rem" }}>
-            <Link to="/" className="nav-link">
-               <ArrowLeft size={18} style={{ display: "inline", marginRight: "0.5rem", verticalAlign: "middle" }} />
-               Back to Scheduler
-            </Link>
+      <div className="container mx-auto max-w-5xl py-8 px-4">
+         <div className="flex items-center justify-between mb-8">
+            <div>
+               <h1 className="text-4xl font-bold flex items-center gap-3">
+                  <Contact className="size-8" />
+                  Manage Contacts
+               </h1>
+               <p className="text-muted-foreground mt-2">
+                  Add, edit, and delete your WhatsApp contacts
+               </p>
+            </div>
+            <Button asChild variant="outline">
+               <Link to="/">
+                  <ArrowLeft className="size-4" />
+                  Back to Scheduler
+               </Link>
+            </Button>
          </div>
 
-         {(addFetcher.data?.error || editFetcher.data?.error || deleteFetcher.data?.error) && (
-            <div className="error-message">
-               {addFetcher.data?.error || editFetcher.data?.error || deleteFetcher.data?.error}
-            </div>
+         {(addFetcher.data?.error ||
+            editFetcher.data?.error ||
+            deleteFetcher.data?.error) && (
+            <Alert variant="destructive" className="mb-6">
+               <AlertCircle className="size-4" />
+               <AlertDescription>
+                  {addFetcher.data?.error ||
+                     editFetcher.data?.error ||
+                     deleteFetcher.data?.error}
+               </AlertDescription>
+            </Alert>
          )}
 
-         {(addFetcher.data?.success || editFetcher.data?.success || deleteFetcher.data?.success) && (
-            <div className="success-message">
-               {addFetcher.data?.message || editFetcher.data?.message || deleteFetcher.data?.message}
-            </div>
+         {(addFetcher.data?.success ||
+            editFetcher.data?.success ||
+            deleteFetcher.data?.success) && (
+            <Alert className="mb-6 border-green-600 text-green-600">
+               <AlertCircle className="size-4" />
+               <AlertDescription>
+                  {addFetcher.data?.message ||
+                     editFetcher.data?.message ||
+                     deleteFetcher.data?.message}
+               </AlertDescription>
+            </Alert>
          )}
 
          {/* Add Contact Form */}
-         <div className="card">
-            <h2 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-               <UserPlus size={22} />
-               Add New Contact
-            </h2>
-            <addFetcher.Form key={addFormKey} method="post">
-               <input type="hidden" name="intent" value="create" />
+         <Card>
+            <CardHeader>
+               <CardTitle className="flex items-center gap-2">
+                  <UserPlus className="size-5" />
+                  Add New Contact
+               </CardTitle>
+               <CardDescription>
+                  Add a new WhatsApp contact to your list
+               </CardDescription>
+            </CardHeader>
+            <CardContent>
+               <addFetcher.Form
+                  key={addFormKey}
+                  method="post"
+                  className="space-y-4"
+               >
+                  <input type="hidden" name="intent" value="create" />
 
-               <label>
-                  Name
-                  <input
-                     type="text"
-                     name="name"
-                     required
-                     placeholder="John Doe"
+                  <div className="space-y-2">
+                     <Label htmlFor="name">Name</Label>
+                     <Input
+                        id="name"
+                        type="text"
+                        name="name"
+                        required
+                        placeholder="John Doe"
+                        disabled={addFetcher.state === "submitting"}
+                     />
+                  </div>
+
+                  <div className="space-y-2">
+                     <Label htmlFor="phone">Phone Number</Label>
+                     <Input
+                        id="phone"
+                        type="text"
+                        name="phone"
+                        required
+                        placeholder="4915758278556"
+                        pattern="[0-9]+"
+                        disabled={addFetcher.state === "submitting"}
+                     />
+                     <p className="text-xs text-muted-foreground">
+                        Digits only, with country code (e.g., 4915758278556)
+                     </p>
+                  </div>
+
+                  <Button
+                     type="submit"
                      disabled={addFetcher.state === "submitting"}
-                  />
-               </label>
-
-               <label>
-                  Phone Number (digits only, with country code)
-                  <input
-                     type="text"
-                     name="phone"
-                     required
-                     placeholder="4915758278556"
-                     pattern="[0-9]+"
-                     disabled={addFetcher.state === "submitting"}
-                  />
-               </label>
-
-               <button type="submit" disabled={addFetcher.state === "submitting"} style={{ display: "flex", alignItems: "center", gap: "0.5rem", justifyContent: "center" }}>
-                  <UserPlus size={18} />
-                  {addFetcher.state === "submitting" ? "Adding..." : "Add Contact"}
-               </button>
-            </addFetcher.Form>
-         </div>
+                     className="w-full"
+                  >
+                     <UserPlus className="size-4" />
+                     {addFetcher.state === "submitting"
+                        ? "Adding..."
+                        : "Add Contact"}
+                  </Button>
+               </addFetcher.Form>
+            </CardContent>
+         </Card>
 
          {/* Contacts List */}
-         <div className="card">
-            <h2 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-               <Users size={22} />
-               Your Contacts
-            </h2>
-            {contacts.length === 0 ? (
-               <p className="small">
-                  No contacts yet. Add your first contact above!
-               </p>
-            ) : (
-               <table>
-                  <thead>
-                     <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Phone</th>
-                        <th>Actions</th>
-                     </tr>
-                  </thead>
-                  <tbody>
-                     {contacts.map((contact) => (
-                        <tr key={contact.id}>
-                           <td>{contact.id}</td>
-                           <td>{contact.name}</td>
-                           <td>{contact.phoneDisplay}</td>
-                           <td>
-                              <button
-                                 onClick={() => setEditingContact(contact)}
-                                 style={{
-                                    background: "#fbbf24",
-                                    padding: "0.3rem 0.6rem",
-                                    fontSize: "0.85rem",
-                                    marginTop: 0,
-                                    marginRight: "0.5rem",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: "0.3rem",
-                                 }}
-                              >
-                                 <Edit2 size={14} />
-                                 Edit
-                              </button>
-                              <deleteFetcher.Form
-                                 method="post"
-                                 style={{ display: "inline" }}
-                                 onSubmit={(e) => {
-                                    if (
-                                       !confirm(
-                                          "Are you sure you want to delete this contact?",
-                                       )
-                                    ) {
-                                       e.preventDefault();
-                                    }
-                                 }}
-                              >
-                                 <input
-                                    type="hidden"
-                                    name="intent"
-                                    value="delete"
-                                 />
-                                 <input
-                                    type="hidden"
-                                    name="id"
-                                    value={contact.id}
-                                 />
-                                 <button type="submit" className="btn-cancel" style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
-                                    <Trash2 size={14} />
-                                    Delete
-                                 </button>
-                              </deleteFetcher.Form>
-                           </td>
-                        </tr>
-                     ))}
-                  </tbody>
-               </table>
-            )}
-         </div>
+         <Card className="mt-6">
+            <CardHeader>
+               <CardTitle className="flex items-center gap-2">
+                  <Users className="size-5" />
+                  Your Contacts
+               </CardTitle>
+            </CardHeader>
+            <CardContent>
+               {contacts.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                     No contacts yet. Add your first contact above!
+                  </p>
+               ) : (
+                  <Table>
+                     <TableHeader>
+                        <TableRow>
+                           <TableHead>ID</TableHead>
+                           <TableHead>Name</TableHead>
+                           <TableHead>Phone</TableHead>
+                           <TableHead>Actions</TableHead>
+                        </TableRow>
+                     </TableHeader>
+                     <TableBody>
+                        {contacts.map((contact) => (
+                           <TableRow key={contact.id}>
+                              <TableCell className="font-medium">
+                                 {contact.id}
+                              </TableCell>
+                              <TableCell>{contact.name}</TableCell>
+                              <TableCell className="font-mono text-sm">
+                                 {contact.phoneDisplay}
+                              </TableCell>
+                              <TableCell>
+                                 <div className="flex gap-2">
+                                    <Button
+                                       onClick={() =>
+                                          setEditingContact(contact)
+                                       }
+                                       variant="outline"
+                                       size="sm"
+                                    >
+                                       <Edit2 className="size-4" />
+                                       Edit
+                                    </Button>
+                                    <deleteFetcher.Form
+                                       method="post"
+                                       className="inline"
+                                       onSubmit={(e) => {
+                                          if (
+                                             !confirm(
+                                                "Are you sure you want to delete this contact?",
+                                             )
+                                          ) {
+                                             e.preventDefault();
+                                          }
+                                       }}
+                                    >
+                                       <input
+                                          type="hidden"
+                                          name="intent"
+                                          value="delete"
+                                       />
+                                       <input
+                                          type="hidden"
+                                          name="id"
+                                          value={contact.id}
+                                       />
+                                       <Button
+                                          type="submit"
+                                          variant="destructive"
+                                          size="sm"
+                                       >
+                                          <Trash2 className="size-4" />
+                                          Delete
+                                       </Button>
+                                    </deleteFetcher.Form>
+                                 </div>
+                              </TableCell>
+                           </TableRow>
+                        ))}
+                     </TableBody>
+                  </Table>
+               )}
+            </CardContent>
+         </Card>
 
          {/* Edit Modal */}
-         {editingContact && (
-            <div
-               style={{
-                  position: "fixed",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: "rgba(0, 0, 0, 0.5)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  zIndex: 1000,
-               }}
-               onClick={() => setEditingContact(null)}
-            >
-               <div
-                  className="card"
-                  style={{
-                     maxWidth: "500px",
-                     width: "90%",
-                     margin: 0,
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-               >
-                  <h2 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                     <Edit2 size={22} />
+         <Dialog
+            open={!!editingContact}
+            onOpenChange={(open) => !open && setEditingContact(null)}
+         >
+            <DialogContent>
+               <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                     <Edit2 className="size-5" />
                      Edit Contact
-                  </h2>
-                  <editFetcher.Form key={editingContact.id} method="post">
+                  </DialogTitle>
+                  <DialogDescription>
+                     Update the contact information below
+                  </DialogDescription>
+               </DialogHeader>
+               {editingContact && (
+                  <editFetcher.Form
+                     key={editingContact.id}
+                     method="post"
+                     className="space-y-4"
+                  >
                      <input type="hidden" name="intent" value="update" />
                      <input type="hidden" name="id" value={editingContact.id} />
 
-                     <label>
-                        Name
-                        <input
+                     <div className="space-y-2">
+                        <Label htmlFor="edit-name">Name</Label>
+                        <Input
+                           id="edit-name"
                            type="text"
                            name="name"
                            required
                            defaultValue={editingContact.name}
                            disabled={editFetcher.state === "submitting"}
                         />
-                     </label>
+                     </div>
 
-                     <label>
-                        Phone Number
-                        <input
+                     <div className="space-y-2">
+                        <Label htmlFor="edit-phone">Phone Number</Label>
+                        <Input
+                           id="edit-phone"
                            type="text"
                            name="phone"
                            required
@@ -422,30 +499,31 @@ export default function Contacts() {
                            pattern="[0-9]+"
                            disabled={editFetcher.state === "submitting"}
                         />
-                     </label>
+                     </div>
 
-                     <button type="submit" disabled={editFetcher.state === "submitting"} style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", justifyContent: "center" }}>
-                        <Save size={16} />
-                        {editFetcher.state === "submitting" ? "Saving..." : "Save Changes"}
-                     </button>
-                     <button
-                        type="button"
-                        onClick={() => setEditingContact(null)}
-                        style={{
-                           background: "#6b7280",
-                           marginLeft: "0.5rem",
-                           display: "inline-flex",
-                           alignItems: "center",
-                           gap: "0.4rem",
-                        }}
-                     >
-                        <X size={16} />
-                        Cancel
-                     </button>
+                     <div className="flex gap-2 justify-end">
+                        <Button
+                           type="button"
+                           variant="outline"
+                           onClick={() => setEditingContact(null)}
+                        >
+                           <X className="size-4" />
+                           Cancel
+                        </Button>
+                        <Button
+                           type="submit"
+                           disabled={editFetcher.state === "submitting"}
+                        >
+                           <Save className="size-4" />
+                           {editFetcher.state === "submitting"
+                              ? "Saving..."
+                              : "Save Changes"}
+                        </Button>
+                     </div>
                   </editFetcher.Form>
-               </div>
-            </div>
-         )}
+               )}
+            </DialogContent>
+         </Dialog>
       </div>
    );
 }

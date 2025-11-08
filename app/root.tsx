@@ -14,6 +14,7 @@ export default function App() {
    return (
       <html lang="en">
          <head>
+            <title>WhatsApp Message Scheduler</title>
             <meta charSet="utf-8" />
             <meta
                name="viewport"
@@ -22,7 +23,7 @@ export default function App() {
             <Meta />
             <Links />
          </head>
-         <body>
+         <body className="min-h-screen bg-background text-foreground antialiased">
             <Outlet />
             <ScrollRestoration />
             <Scripts />
